@@ -199,4 +199,6 @@ grid.arrange(
 ###to do list-----
 
 ###ADD ROW ABOUT CUMULATIVE NR OF PEOPLE BY YEAR 
-### LOOK INTO IMPOSITION DATE (prob the date )
+### LOOK INTO IMPOSITION DATE (
+### will contact MD to get clarity about what's the sentence date, what's imposition date and how to understand who's with parole, 
+### who's without parole and who's resentenced etc 
