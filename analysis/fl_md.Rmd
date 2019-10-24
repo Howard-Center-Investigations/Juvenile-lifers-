@@ -1,0 +1,73 @@
+---
+title: "fl_juvenile_markdown"
+author: "Riin Aljas"
+date: "10/10/2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+<!-- Timestamp: leave this in to automatically track when a file is rendered -->
+*Rendered at `r format(Sys.time(), '%I:%M %p, %b. %d, %Y')`*
+
+<!-- Contact info: leave author/reporter/editor contact info here -->
+*Riin Aljas (aljasriin@gmail.com)*
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE, 
+  message = FALSE, 
+  warning = FALSE
+  )
+knitr::opts_knit$set(
+  root.dir = rprojroot::find_rstudio_root_file()
+  )
+```
+
+```{r data & lbraries}
+source("analysis/etl_florida.R")
+
+
+
+library(DT)
+
+by_dc <- lifers %>%
+  group_by(dc_number, last_name, first_name, middle_name, dob, gender, race) %>%
+  count()
+
+```
+
+
+##**OVERWIEW**
+
+write stuff here 
+
+
+
+##**FINDINGS**
+
+ - **What is the overall number of juveniles in each state currently serving a life sentence?**
+ 
+We don't know yet, the numbers of people who have convicted with a life sentence since 1966 is **```r n_distinct(lifers$dc_number)```**
+
+WHAT ABOUT THE PEOPLE WHO HAVE BEEN RELEASED? ARE THEY'RE IN THE DATA OR NOT? (E.G. HERBERT JOHSNON, IS HE IN THE DATA 
+BECAUSE OUR DATA IS FROM APRIL OR ACTUALLY THEY'RE THERE GO BACK AND CHECK THAT )
+
+WE NEED TO DO ANALYSIS FOR CURRENT ONES SEPARATELY (MAYBE JOIN WITH RELEASED, WE SHOULD HAVE IT?)
+
+ 
+ - ** What is the racial breakdown of juvenile lifers in each state?**
+```{r }
+ datatable(by_dc %>%
+  group_by(race) %>%
+  summarise(people = n()) %>%
+  mutate(pct = people/nrow(by_dc)*100))
+```
+Additionally, 2.4% of them are women, and 97.5% are male.  50% of all juvenile offenders were 17, 33% 16, 14% 15, 3% 14 and 0.8 13.
+
+ - **Are the racial splits out of proportion to the prison population as a whole, or the state population as a whole?**
+ 
+ 
+ - ** Has there been a change since 2016, the date of a key supreme court case,  in the number of juvenile lifers in each state?  - ** If so, what is the change. 
+ - ** If there has been a change, has the racial distribution of people affected the same as the racial distribution of the juvenile lifer population as a whole? 
+ - ** As in, are people of one race being let out at a higher rate than another race? 
+ ** If there has been a change, is there a geographic disparity in who is being affected?  
+ ** - Are people from one part of a state more likely to get out?
