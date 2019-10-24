@@ -1,4 +1,11 @@
-###Pennsylvania
+###Pennsylvania juvenile analysis
+
+###Data acquired from Maryland DOC by Camilla Velloso (camilaspvelloso@gmail.com)
+
+###Analysis by Riin Aljas (aljasriin@gmail.com)
+
+###GET DATA----
+
 
 ###GET DATA----
 library(readxl)
@@ -6,17 +13,14 @@ library(tidyverse)
 library(readr)
 library(lubridate)
 library(tidycensus)
+library(gridExtra)
 
-lifers <- read_excel("data/pennsylvania_091219.xlsx")
+lifers <- read_excel("data/source/pennsylvania_091219.xlsx")
 
 population <- get_estimates(geography = "county", "population", variables = NULL, breakdown = NULL, 
               breakdown_labels = NULL, year = 2018, state = "PA", key = "156fda6326a38745b31480cc7848c55e7f4fcf41")
 
-?get_estimates
 
-populations <- 
-  
-?
 ##create an age column 
 lifers <- lifers %>%
   mutate(age = as.period(interval(DOB, Commitment_Date, "years")))
@@ -27,10 +31,10 @@ lifers$age <- as.integer(substr(lifers$age, 1, 2))
 
 ### how many unique people?
 
-n_distinct(lifersa$dc_number)
+n_distinct(lifers$dc_number)
 #521
 
-#AGE---
+###age----
 
 age <-  lifers %>%
   group_by(dc_number, age) %>%
@@ -63,7 +67,9 @@ lifers %>%
   group_by(Gender) %>%
   summarise(people = n()) %>%
   mutate(pct = people/nrow(lifers)*100)
-# 
+###gender---- 
+
+
 # FEMALE     10  1.92
 # 2 MALE      511 98.1 
 
@@ -80,7 +86,7 @@ by_county <- lifers %>%
 #look how they line up with populations 
 
 
-population$NAME <- gsub(" County, Pennsylvania", "", population$NAME) <- #clean up to line with existing data
+population$NAME <- gsub(" County, Pennsylvania", "", population$NAME)  #<--clean up to line with existing data
 population <- population %>% 
   mutate(NAME = toupper(NAME)) %>%
   filter(variable == "POP") 
@@ -88,10 +94,7 @@ population <- population %>%
 
 by_county <- by_county %>%
   left_join(population, by = "NAME") %>%
-  select(1:3, 7) %>%
-
-by_county <- by_county %>% select(-pop_rank)
-
+  select(1:3, 6)
 
 by_county <- 
   by_county %>%
@@ -99,7 +102,7 @@ by_county <-
          rank_juv = rank(people), 
          disparity = (rank_pop-rank_juv))
 
-# the counties which stand out the most when it comes to juv pop vs overall pop are 
+# the counties which stand out the most positively when it comes to juv pop vs overall pop are 
 # 1 CLEARFIELD	4	0.7677543	79388	8	22.5	-14.5
 # 2	CRAWFORD	4	0.7677543	85063	10	22.5	-12.5
 # 3	JUNIATA	2	0.3838772	24704	2	13.5	-11.5
@@ -111,65 +114,35 @@ by_county <-
 # 9	LEBANON	4	0.7677543	141314	16	22.5	-6.5
 # 10	VENANGO	2	0.3838772	51266	7	13.5	-6.5
 
-#when was sentenced?
+#the counties who have more than they "should" are: 
+# #WASHINGTON	1	0.1919386	42125	POP	207346	21	4.0	17.0
+# 37	LUZERNE	2	0.3838772	42079	POP	317646	27	13.5	13.5
+# 36	NORTHAMPTON	2	0.3838772	42095	POP	304807	26	13.5	12.5
+# 35	LACKAWANNA	2	0.3838772	42069	POP	210793	22	13.5	8.5
+# 33	LAWRENCE	1	0.1919386	42073	POP	86184	11	4.0	7.0
+# 34	MONTGOMERY	6	1.1516315	42091	POP	828604	36	29.0	7.0
+
+###sentence time----
 
 lifers <- lifers %>%
   mutate(sentence_year = year(Sentencing_Date), 
          commitment_year = year(Commitment_Date))
+grid.arrange(
+  (lifers %>%
+     group_by(sentence_year) %>%
+     filter(!any(is.na(sentence_year))) %>%
+     summarise(people = n()) %>%
+     ggplot(lifers, mapping = aes(sentence_year, people))+
+     geom_point()+
+     geom_line()),
+  (lifers %>% 
+     group_by(commitment_year) %>%
+     summarise(people = n()) %>% 
+     ggplot(lifers, mapping = aes(commitment_year, people))+
+     geom_point()+
+     geom_line()), 
+  ncol=2)
 
-lifers %>% 
-  group_by(commitment_year) %>%
-  summarise(people = n()) %>% 
-  ggplot(lifers, mapping = aes(commitment_year, people))+
-  geom_point()+
-  geom_line()
-
-# #1	1994	31
-# 2	1995	25
-# 3	1999	22
-# 4	1990	21
-# 5	1997	19
-# 6	1982	18
-# 7	1983	17
-# 8	1992	17
-# 9	1993	16
-# 10	2003	16
-# 11	1991	15
-# 12	1977	14
-# 13	1987	14
-# 14	1996	14
-# 15	1998	14
-# 16	1976	13
-# 17	2009	13
-# 18	1979	12
-# 19	1989	12
-# 20	2000	12
-# 21	2002	12
-# 22	2008	12
-# 23	1975	11
-# 24	1988	11
-# 25	1981	10
-# 26	2007	10
-# 27	2011	10
-# 28	1973	9
-# 29	1978	9
-# 30	2005	9
-# 31	2006	9
-# 32	1985	8
-# 33	2004	8
-# 34	2010	8
-# 35	2012	8
-# 36	1980	7
-# 37	1984	6
-# 38	1986	6
-# 39	2001	5
-# 40	1970	4
-# 41	1971	4
-# 42	1974	4
-# 43	1972	3
-# 44	1953	1
-# 45	1969	1
-# 46	2013	1
 
 
 ###how many are resentenced?----
@@ -177,7 +150,7 @@ lifers %>%
 by_status <- lifers %>% 
   group_by(Status) %>%
   summarise(people = n()) %>%
-  mutate(pct = people/521*100)
+  mutate(pct = people/nrow(lifers)*100)
 
 # Status                             people    pct
 # <chr>                               <int>  <dbl>
@@ -293,5 +266,11 @@ lifers %>%
   facet_wrap(~`Committing County`)
 
 
-##doesn't seem a lo of geographical disparity. 
+##doesn't seem a lot of geographical disparity. 
+
+###to do list----
+
+### ADD ROW ABOUT CUMULATIVE NR OF PEOPLE BY YEAR 
+### look into let out age 
+### examine the diff by race in releasing 
 
