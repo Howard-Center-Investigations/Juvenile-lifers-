@@ -8,7 +8,6 @@
 
 library(readxl)
 library(tidyverse)
-library(readr)
 library(lubridate)
 library(tidycensus)
 library(ggplot2)
