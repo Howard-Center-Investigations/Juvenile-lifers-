@@ -11,6 +11,7 @@ library(tidyverse)
 library(lubridate)
 library(tidycensus)
 library(ggplot2)
+library(gridExtra)
 
 lifers <- read_excel("data/source/maryland.xlsx")
 lifers <- lifers[-c(364),]  #remove empty row
