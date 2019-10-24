@@ -18,7 +18,7 @@ lifers <- lifers[-c(364),]  #remove empty row
 lifers <- lifers %>%
   rename(dc_number = `CL#`,
          offense_date = DATE_OF_OFFENSE) #standardise column names to reuse scripts
-
+glimpse(lifers)
 #get 2018 populations form census data 
 
 population <- get_estimates(geography = "county", "population", 
@@ -33,8 +33,21 @@ population <- get_estimates(geography = "county", "population",
 lifers <- lifers %>%
   mutate(age = ifelse(lifers$offense_date %in% c(NA), 
                       interval(DOB, ADMISSION_DATE), 
-                      interval(DOB, offense_date)))
+                      interval(DOB, offense_date))) %>%
+  mutate(age = seconds(age)) %>%
+  mutate(age = dyears(age))
+  
+  
+    mutate(age = as.period(age,"years"))
+glimpse(lifers)
 
+
+
+
+
+##create an age column 
+lifers <- lifers %>%
+  mutate(age = as.period(interval(DOB, Commitment_Date, "years")))
 #for some reason as.period(interval, $DOB, IMPOSITION_DATE(same for offense_date)
 #gives me zeros, tried several ways, couldn't fix, to save time, will do it manually
 

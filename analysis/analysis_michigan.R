@@ -26,63 +26,76 @@ population <- get_estimates(geography = "county", "population", variables = NULL
 ### how many unique people?
 
 n_distinct(lifers$dc_number)
-#521
+nrow(is.na(lifers$dc_number))
+
+#368 <-- they're all in the data once 
 
 ###age----
 
-age <-  lifers %>%
-  group_by(dc_number, age) %>%
+t <-lifers %>%
+  group_by(dc_number, age_at_offense) %>%
   count()
-age %>% group_by(age) %>% count() %>% mutate(pct = n/521*100) 
 
-###one guy went to prison only when he was 35.
+n_distinct(t$dc_number) # <-- also 368, all people have one age. 
 
-summary(lifers$age)
 
+lifers %>% group_by(age_at_offense) %>% count() %>% mutate(pct = n/nrow(lifers)*100) 
+
+# age_at_offense     n   pct
+
+# 1             14     4  1.09
+# 2             15    46 12.5 
+# 3             16   109 29.6 
+# 4             17   209 56.8 
+
+summary(lifers$age_at_offense)
+# 
 # Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-# 14.00   17.00   18.00   18.24   19.00   35.00 
+# 14.00   16.00   17.00   16.42   17.00   17.00 
 
 ###race----
 
 lifers %>%
-  group_by(Race) %>%
-  summarise(people = n()) %>%
-  mutate(pct = people/521*100)
-
-# #race       people    pct
-# <chr>       <int>  <dbl>
-#   1 ALL OTHERS      2  0.410
-# 2 BLACK         323 66.2  
-# 3 HISPANIC       14  2.87 
-# 4 WHITE         149 30.5  
-
-
-lifers %>%
-  group_by(Gender) %>%
+  group_by(race) %>%
   summarise(people = n()) %>%
   mutate(pct = people/nrow(lifers)*100)
+
+# race            people    pct
+# <chr>            <int>  <dbl>
+# 1 Asian                2  0.543
+# 2 Black              258 70.1  
+# 3 Hispanic            10  2.72 
+# 4 Native American      1  0.272
+# 5 White               96 26.1  
+# 6 NA                   1  0.272
+
 ###gender---- 
 
+lifers %>%
+  group_by(gender) %>%
+  summarise(people = n()) %>%
+  mutate(pct = people/nrow(lifers)*100)
 
-# FEMALE     10  1.92
-# 2 MALE      511 98.1 
+# 1 female     10  2.72
+# 2 male      358 97.3 
 
 ####geography----
 
+nrow(is.na(lifers$county)) # no missing values 
+
 by_county <- lifers %>%
-  group_by(`Committing County`) %>%
+  group_by(county) %>%
   summarise(people = n()) %>%
   mutate(pct = people/nrow(lifers)*100) %>%
-  rename(NAME = `Committing County`)
+  rename(NAME = county) #rename for population data joining 
 
 
 
-#look how they line up with populations 
+###look how they line up with populations 
 
 
-population$NAME <- gsub(" County, Pennsylvania", "", population$NAME)  #<--clean up to line with existing data
+population$NAME <- gsub(" County, Michigan", "", population$NAME)  #<--clean up to line with existing data
 population <- population %>% 
-  mutate(NAME = toupper(NAME)) %>%
   filter(variable == "POP") 
 
 
@@ -96,31 +109,16 @@ by_county <-
          rank_juv = rank(people), 
          disparity = (rank_pop-rank_juv))
 
-# the counties which stand out the most positively when it comes to juv pop vs overall pop are 
-# 1 CLEARFIELD	4	0.7677543	79388	8	22.5	-14.5
-# 2	CRAWFORD	4	0.7677543	85063	10	22.5	-12.5
-# 3	JUNIATA	2	0.3838772	24704	2	13.5	-11.5
-# 4	FAYETTE	5	0.9596929	130441	15	26.0	-11.0
-# 5	DAUPHIN	14	2.6871401	277097	25	35.0	-10.0
-# 6	TIOGA	2	0.3838772	40763	5	13.5	-8.5
-# 7	BEAVER	5	0.9596929	164742	18	26.0	-8.0
-# 8	ERIE	9	1.7274472	272061	24	31.5	-7.5
-# 9	LEBANON	4	0.7677543	141314	16	22.5	-6.5
-# 10	VENANGO	2	0.3838772	51266	7	13.5	-6.5
+###counties with the most juveniles line up with the population 
 
-#the counties who have more than they "should" are: 
-# #WASHINGTON	1	0.1919386	42125	POP	207346	21	4.0	17.0
-# 37	LUZERNE	2	0.3838772	42079	POP	317646	27	13.5	13.5
-# 36	NORTHAMPTON	2	0.3838772	42095	POP	304807	26	13.5	12.5
-# 35	LACKAWANNA	2	0.3838772	42069	POP	210793	22	13.5	8.5
-# 33	LAWRENCE	1	0.1919386	42073	POP	86184	11	4.0	7.0
-# 34	MONTGOMERY	6	1.1516315	42091	POP	828604	36	29.0	7.0
-
-###sentence time----
+###time----
 
 lifers <- lifers %>%
-  mutate(sentence_year = year(Sentencing_Date), 
-         commitment_year = year(Commitment_Date))
+  mutate(sentence_year = year(sentence_date), 
+         offense_year = year(offense_date),
+         
+lifers$resentence_date <- as.Date(lifers$resentence_date)     
+         
 grid.arrange(
   (lifers %>%
      group_by(sentence_year) %>%

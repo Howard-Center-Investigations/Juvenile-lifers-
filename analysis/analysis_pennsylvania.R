@@ -20,6 +20,7 @@ lifers <- read_excel("data/source/pennsylvania_091219.xlsx")
 population <- get_estimates(geography = "county", "population", variables = NULL, breakdown = NULL, 
               breakdown_labels = NULL, year = 2018, state = "PA", key = "156fda6326a38745b31480cc7848c55e7f4fcf41")
 
+glimpse(lifers)
 
 ##create an age column 
 lifers <- lifers %>%
@@ -273,4 +274,16 @@ lifers %>%
 ### ADD ROW ABOUT CUMULATIVE NR OF PEOPLE BY YEAR 
 ### look into let out age 
 ### examine the diff by race in releasing 
+
+county <- lifers %>%
+  group_by(`Committing County`) %>%
+  summarise(total_people=n())
+
+county_status <- lifers %>%
+  group_by(`Committing County`, Status) %>%
+  summarise(total_status = n()) %>%
+  left_join(county) %>%
+  mutate(pct_in_county = round((total_status/total_people)*100,2) )
+
+
 
