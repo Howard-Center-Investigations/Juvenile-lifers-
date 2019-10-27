@@ -173,36 +173,54 @@ whitesout <- lifers %>%
   filter(Race == "WHITE") %>%
   group_by(Status) %>%
   summarise(people= n()) %>%
-  mutate(pct = people/nrow(lifers %>%
-                         filter(Race == "WHITE"))) %>%
+  mutate(pct = round(people/nrow(lifers %>%
+                         filter(Race == "WHITE")),2))%>%
   mutate(Race = "WHITE")
 
 blacksout <- lifers %>%
   filter(Race == "BLACK") %>%
   group_by(Status) %>%
   summarise(people= n()) %>%
-  mutate(pct = people/nrow(lifers %>%
-                             filter(Race == "BLACK"))) %>%
+  mutate(pct = round(people/nrow(lifers %>%
+                             filter(Race == "BLACK")),2)) %>%
   mutate(Race = "BLACK")
 
 hispanicsout <- lifers %>%
   filter(Race == "HISPANIC") %>%
   group_by(Status) %>%
   summarise(people= n()) %>%
-  mutate(pct = people/nrow(lifers %>%
-                             filter(Race == "HISPANIC"))) %>%
+  mutate(pct = round(people/nrow(lifers %>%
+                             filter(Race == "HISPANIC")),2)) %>%
   mutate(Race = "HISPANIC")
+
 
 asiansout <- lifers %>%
   filter(Race == "ASIAN") %>%
   group_by(Status) %>%
   summarise(people= n()) %>%
-  mutate(pct = people/nrow(lifers %>%
-                             filter(Race == "ASIAN"))) %>%
+  mutate(pct = round(people/nrow(lifers %>%
+                                   filter(Race == "ASIAN")),2)) %>%
   mutate(Race = "ASIAN")
 
 by_race_status <- bind_rows(blacksout, whitesout, hispanicsout, asiansout)
 
+
+by_race_status <- pivot_wider(by_race_status, 
+                 names_from = Race,
+                 values_from = c(people,pct))
+ 
+
+t <- by_race_status %>%
+  select(Status, 
+         nr_black_people = people_BLACK, 
+         pct_BLACK, 
+         nr_white_people = people_WHITE, 
+         pct_WHITE, 
+         nr_hispanic_people = people_HISPANIC, 
+         pct_HISPANIC, 
+         nr_asian_people = people_ASIAN, 
+         pct_ASIAN)
+  
 #hispanics have been released/resentenced the most, then blacks then whites. 
 #For blacks it might be also that they started to release them earlier, 
 #already in 2000s, but that doesn't apply for hispanics 
