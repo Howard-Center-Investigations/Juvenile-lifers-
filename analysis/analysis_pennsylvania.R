@@ -54,7 +54,7 @@ summary(lifers$age)
 lifers %>%
   group_by(Race) %>%
   summarise(people = n()) %>%
-  mutate(pct = people/521*100)
+  mutate(pct = people/nrow(lifers)*100)
 
 # #race       people    pct
 # <chr>       <int>  <dbl>
@@ -99,29 +99,7 @@ by_county <- by_county %>%
 
 by_county <- 
   by_county %>%
-  mutate(rank_pop = rank(value), 
-         rank_juv = rank(people), 
-         disparity = (rank_pop-rank_juv))
-
-# the counties which stand out the most positively when it comes to juv pop vs overall pop are 
-# 1 CLEARFIELD	4	0.7677543	79388	8	22.5	-14.5
-# 2	CRAWFORD	4	0.7677543	85063	10	22.5	-12.5
-# 3	JUNIATA	2	0.3838772	24704	2	13.5	-11.5
-# 4	FAYETTE	5	0.9596929	130441	15	26.0	-11.0
-# 5	DAUPHIN	14	2.6871401	277097	25	35.0	-10.0
-# 6	TIOGA	2	0.3838772	40763	5	13.5	-8.5
-# 7	BEAVER	5	0.9596929	164742	18	26.0	-8.0
-# 8	ERIE	9	1.7274472	272061	24	31.5	-7.5
-# 9	LEBANON	4	0.7677543	141314	16	22.5	-6.5
-# 10	VENANGO	2	0.3838772	51266	7	13.5	-6.5
-
-#the counties who have more than they "should" are: 
-# #WASHINGTON	1	0.1919386	42125	POP	207346	21	4.0	17.0
-# 37	LUZERNE	2	0.3838772	42079	POP	317646	27	13.5	13.5
-# 36	NORTHAMPTON	2	0.3838772	42095	POP	304807	26	13.5	12.5
-# 35	LACKAWANNA	2	0.3838772	42069	POP	210793	22	13.5	8.5
-# 33	LAWRENCE	1	0.1919386	42073	POP	86184	11	4.0	7.0
-# 34	MONTGOMERY	6	1.1516315	42091	POP	828604	36	29.0	7.0
+  mutate(juvenile_per_person = people/value))
 
 ###sentence time----
 
