@@ -171,9 +171,8 @@ by_county <- by_county %>%
 
 by_county <- 
   by_county %>%
-  mutate(rank_pop = rank(value), 
-         rank_juv = rank(people), 
-         disparity = (rank_pop-rank_juv)) 
+  mutate(juvenile_per_person = people/value)
+
 
 #four counties stand out having more juveniles than they "should", but not much:
 #They're Frederick, Allegany, Wahisngton and Montgomery 

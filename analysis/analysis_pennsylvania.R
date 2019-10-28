@@ -225,10 +225,82 @@ t <- by_race_status %>%
 #For blacks it might be also that they started to release them earlier, 
 #already in 2000s, but that doesn't apply for hispanics 
 
+###look at racial differences among counties
+
+
+county <- lifers %>%
+  group_by(`Committing County`) %>%
+  summarise(total_people=n())
+
+county_status <- lifers %>%
+  group_by(`Committing County`, Status) %>%
+  summarise(total_status = n()) %>%
+  left_join(county) %>%
+  mutate(pct_in_county = round((total_status/total_people)*100,2))
+  
+  ggplot(county_status, 
+         mapping  = aes(Status, pct_in_county, color = Status))+
+  geom_bar(stat = "identity")+
+  facet_wrap(~`Committing County`, ncol = 5)
+
+
+released <- county_status %>%
+  filter(Status == "Released")
+
+resentenced <- county_status %>%
+  filter(Status %in% 
+           c("Resentenced (no longer Life-Life)", 
+             "Resentenced (no longer Life-Life)*", 
+             "Resentenced to Life-Life"))
+
+pending <- county_status %>%
+  filter(Status == "Pending")
+
+#most of counties with high amount of pending people have very little amount 
+#of people to begin with, exceptions are Dauphin and Delaware 
+
+summary(released$pct_in_county)
+
+Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+7.69   18.34   36.36   43.30   52.96  100.00 
+
+#Most of countries where there are high % of released peopel are the ones
+#with low numbers of juveniles to begin with, exception being Philadelphia, 
+#which have a lot of released people. Delaware is the exception, having 26 total 
+#juveniles but low number of released people. Allegheny has a high % of resentenced
+# people.
+
+county_released_or_resentenced_race <- lifers %>%
+  filter(!Status %in% c("Pending", "Resentenced to Life-Life", "Deceased"))%>%
+  group_by(`Committing County`, Race) %>%
+  summarise(total_status = n()) %>%
+  left_join(county_race) %>%
+  mutate(pct_in_county = round((total_status/total_people)*100,2))
+
+county_race <- lifers %>%
+  group_by(`Committing County`, Race) %>%
+  summarise(total_people=n())
+
+
+ggplot(county_released_or_resentenced_race, 
+       aes(Race, pct_in_county))+
+  geom_bar(stat = "identity")+
+  facet_wrap(~`Committing County`)
+
+
+#There's difference in Philadelphia, between the races in counties, most 
+
+
+
+
+
+
+
 lifers %>%
   filter(!Status %in% c("Pending", "Resentenced to Life-Life", "Deceased")) %>%
-           group_by(sentence_year, Race) %>%
+           group_by(`Committing County`, Race) %>%
            summarise(people = n()) %>%
+  
            ggplot(lifers, mapping = aes(sentence_year, people))+
            geom_point()+
            facet_wrap(~Race)
@@ -267,9 +339,9 @@ lifers %>%
 
 ###to do list----
 
-### ADD ROW ABOUT CUMULATIVE NR OF PEOPLE BY YEAR 
 ### look into let out age 
-### examine the diff by race in releasing 
+### pull in populations 
+###
 
 county <- lifers %>%
   group_by(`Committing County`) %>%
@@ -278,8 +350,10 @@ county <- lifers %>%
 county_status <- lifers %>%
   group_by(`Committing County`, Status) %>%
   summarise(total_status = n()) %>%
-  left_join(county) %>%
+  left_join(county_race, by = c("Commiting County", "Race")) %>%
   mutate(pct_in_county = round((total_status/total_people)*100,2) )
 
 
-
+county_race <- lifers %>%
+  group_by(`Committing County`, Race) %>%
+  summarise(total_people=n())
