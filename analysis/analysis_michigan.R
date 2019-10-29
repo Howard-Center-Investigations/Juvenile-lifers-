@@ -378,7 +378,11 @@ lifers %>%
 # 2 Hispanic      1           10      10   
 # 3 White         8           96     8.33
 
-#Blacks are released less 
+#Blacks are released the least, hispanics the most. for some reason hispanics have more pending and less false (no resentence trials), 
+#blacks have the highest concentration of 20-60 resentenced year punishements. 
+
+##hispanics have higher amount of lifers compared to blacks and whites, but also less 20/60 and 30/60 year sentences. They also 
+#have highest % of Released people. 
   
   
 status_race <- lifers %>%
@@ -387,110 +391,50 @@ status_race <- lifers %>%
   left_join(all_juv_by_race, by = c("race")) %>%
   mutate(pct_race= people/total_people*100)
 
+
+
 status_race <- pivot_wider(status_race, 
                            names_from = race,
-                           values_from = c(people,pct))
+                           values_from = c(people, pct_race, total_people))
 
 
-
-
-
-
-
-
-  
-
-#Most of countries where there are high % of released peopel are the ones
-#with low numbers of juveniles to begin with, exception being Philadelphia, 
-#which have a lot of released people. Delaware is the exception, having 26 total 
-#juveniles but low number of released people. Allegheny has a high % of resentenced
-# people.
-
-county_released_or_resentenced_race <- lifers %>%
-  filter(!Status %in% c("Pending", "Resentenced to Life-Life", "Deceased"))%>%
-  group_by(`Committing County`, Race) %>%
-  summarise(total_status = n()) %>%
-  left_join(county_race) %>%
-  mutate(pct_in_county = round((total_status/total_people)*100,2))
-
-county_race <- lifers %>%
-  group_by(`Committing County`, Race) %>%
-  summarise(total_people=n())
-
-
-ggplot(county_released_or_resentenced_race, 
-       aes(Race, pct_in_county))+
+lifers %>%
+  filter(race %in% c("Black", "White", "Hispanic")) %>%
+  group_by(race, status) %>% 
+  summarise(people = n()) %>%
+  left_join(all_juv_by_race, by = c("race")) %>%
+  mutate(pct_race= people/total_people*100) %>%
+  ggplot(lifers, mapping = aes(status, pct_race, fill = status))+
   geom_bar(stat = "identity")+
-  facet_wrap(~`Committing County`)
-
-
-#There's difference in Philadelphia, between the races in counties, most 
-
-
-
-
-
-
-
-lifers %>%
-  filter(!Status %in% c("Pending", "Resentenced to Life-Life", "Deceased")) %>%
-  group_by(`Committing County`, Race) %>%
-  summarise(people = n()) %>%
+  facet_wrap(~race)
   
-  ggplot(lifers, mapping = aes(sentence_year, people))+
-  geom_point()+
-  facet_wrap(~Race)
+###---by age 
 
+lifers$current_age <- as.integer(lifers$current_age)
+resentenced$current_age <- as.integer(resentenced$current_age)
 
+summary(lifers$current_age)
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+# 21.00   37.00   43.00   43.11   49.00   75.00       1 
 
-blacksoutyear <- lifers %>%
-  filter(Race == "BLACK") %>%
-  group_by(Status, sentence_year) %>%
-  summarise(people= n()) %>%
-  ggplot(lifers, mapping=aes(sentence_year, people))+
-  geom_point()+
-  geom_line()+
-  facet_wrap(~Status)
+summary(resentenced$current_age)
 
-lifers %>%
-  filter(Race == "HISPANIC") %>%
-  group_by(Status, sentence_year) %>%
-  summarise(people= n()) %>%
-  ggplot(lifers, mapping=aes(sentence_year, people))+
-  geom_point()+
-  geom_line()+
-  facet_wrap(~Status)
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+# 21      39      44      45      50      75       1 
 
+released <- lifers %>%
+  filter(status == "Released")
+  
+summary(released$current_age)
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+# 48.00   55.00   59.00   59.35   62.00   75.00
 
-lifers %>%
-  filter(!Status %in% c("Pending", "Resentenced to Life-Life", "Deceased")) %>%
-  group_by(sentence_year, `Committing County` ) %>%
+released %>% 
+  group_by(current_age, race) %>%
   summarise(people = n()) %>%
-  ggplot(lifers, mapping = aes(sentence_year, people))+
-  geom_point()+
-  facet_wrap(~`Committing County`)
+  ggplot(released, mapping = aes(current_age, people))+
+  geom_bar(stat = "identity")+
+  facet_wrap(~race)+
+  coord_flip()
 
-
-##doesn't seem a lot of geographical disparity. 
-
-###to do list----
-
-### look into let out age 
-### pull in populations 
-###
-
-county <- lifers %>%
-  group_by(`Committing County`) %>%
-  summarise(total_people=n())
-
-county_status <- lifers %>%
-  group_by(`Committing County`, Status) %>%
-  summarise(total_status = n()) %>%
-  left_join(county_race, by = c("Commiting County", "Race")) %>%
-  mutate(pct_in_county = round((total_status/total_people)*100,2) )
-
-
-county_race <- lifers %>%
-  group_by(`Committing County`, Race) %>%
-  summarise(total_people=n())
-
+#there are more old people who's been released among black people 
