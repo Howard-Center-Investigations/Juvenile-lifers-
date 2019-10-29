@@ -240,7 +240,9 @@ new_sentences <- new_sentences %>%
   left_join(crimes)
 
 new_sentences %>%
-  group_by(resentenced_results, offense_code) %>%
+  group_by(resentenced_results, crime) %>%
   summarise(people = n()) %>%
-  mutate(pct = people/nrow(resentenced)*100) %>% 
+  mutate(pct = people/nrow(new_sentences*100)) %>%
+  ggplot(new_sentences, mapping = aes(resentenced_results, crime))+
+  
   
