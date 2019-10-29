@@ -14,8 +14,16 @@ library(readr)
 library(lubridate)
 library(tidycensus)
 library(gridExtra)
+library(janitor)
 
-lifers <- read_excel("data/source/michigan_2019.xlsx")
+lifers <- read_excel("data/source/michigan_2019.xlsx", 
+                            col_types = c("numeric", "text", "text", 
+                                          "text", "text", "numeric", "text", 
+                                          "date", "date", "date", "date", "text", 
+                                          "text", "date", "text", "text", "date", 
+                                          "text", "date", "text", "text", "text", 
+                                          "text"))
+lifers <- clean_names(lifers)
 
 population <- get_estimates(geography = "county", "population", variables = NULL, breakdown = NULL, 
                             breakdown_labels = NULL, year = 2018, state = "MI", key = "156fda6326a38745b31480cc7848c55e7f4fcf41")
@@ -108,40 +116,41 @@ by_county <- by_county %>%
 
 by_county <- 
   by_county %>%
-  mutate(juvenile_per_person = people/value)
+  mutate(juvenile_per_person = people/value*100)
 
 
-###counties with the most juveniles line up with the population 
 
 ###time----
 
 lifers <- lifers %>%
-  mutate(sentence_year = year(sentence_date), 
+  mutate(resentence_year = year(resentence_date),
          offense_year = year(offense_date))
-         
-lifers$resentence_date <- as.Date(lifers$resentence_date)     
          
 grid.arrange(
   (lifers %>%
-     group_by(sentence_year) %>%
-     filter(!any(is.na(sentence_year))) %>%
+     group_by(offense_year) %>%
+     filter(!any(is.na(offense_year))) %>%
      summarise(people = n()) %>%
-     ggplot(lifers, mapping = aes(sentence_year, people))+
+     ggplot(lifers, mapping = aes(offense_year, people))+
      geom_point()+
      geom_line()),
   (lifers %>% 
-     group_by(commitment_year) %>%
+     group_by(resentence_year) %>%
      summarise(people = n()) %>% 
-     ggplot(lifers, mapping = aes(commitment_year, people))+
+     ggplot(lifers, mapping = aes(resentence_year, people))+
      geom_point()+
      geom_line()), 
   ncol=2)
 
 
 
-###how many are resentenced?----
-
-by_status <- lifers %>% 
-  group_by(Status) %>%
+###Status----
+lifers %>% 
+  group_by(status) %>%
   summarise(people = n()) %>%
   mutate(pct = people/nrow(lifers)*100)
+
+#7% have been released, for 12% the status is pending. For rest of them there's no info
+
+
+###how many are ree
