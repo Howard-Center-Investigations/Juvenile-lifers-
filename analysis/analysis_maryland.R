@@ -25,6 +25,9 @@ population <- get_estimates(geography = "county", "population",
                             variables = NULL, breakdown = NULL, 
                             breakdown_labels = NULL, year = 2018, state = "MD", key = "156fda6326a38745b31480cc7848c55e7f4fcf41")
 
+#get 2017 (latest) prison population data from BJS
+population <- read_csv("data/source/prison_population_2017.csv")
+
 
 ##create an age column. use disposition date for the ones who didn't have offense date
 ## MD data people have explanation why it's ok to do it like that

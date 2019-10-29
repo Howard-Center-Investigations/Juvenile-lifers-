@@ -30,6 +30,9 @@ population <- get_estimates(geography = "county", "population", variables = NULL
                             breakdown_labels = NULL, year = 2018, state = "MI", key = "156fda6326a38745b31480cc7848c55e7f4fcf41")
 
 
+#get 2017 (latest) prison population data from BJS
+population <- read_csv("data/source/prison_population_2017.csv")
+
 ###LOOK INTO DATA
 
 ### how many unique people?

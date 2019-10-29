@@ -1,5 +1,7 @@
 s### people we're missing (google): 711333
 
+#get 2017 (latest) prison population data from BJS
+population <- read_csv("data/source/prison_population_2017.csv")
 
 
 
