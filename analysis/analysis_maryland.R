@@ -40,10 +40,6 @@ lifers <- lifers %>%
   mutate(age = seconds(age)) %>%
   mutate(age = dyears(age))
   
-  
-    mutate(age = as.period(age,"years"))
-glimpse(lifers)
-
 
 
 
