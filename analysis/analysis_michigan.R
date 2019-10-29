@@ -152,5 +152,95 @@ lifers %>%
 
 #7% have been released, for 12% the status is pending. For rest of them there's no info
 
+resentenced <- lifers %>%
+  filter(resentenced == "TRUE")
 
-###how many are ree
+resentenced %>% 
+  group_by(status) %>%
+  summarise(people = n()) %>%
+  mutate(pct = people/nrow(resentenced)*100)
+
+status   people    pct
+<chr>     <int>  <dbl>
+  <chr>     <int>  <dbl>
+# 1 DECEASED      1  0.442
+# 2 FALSE       154 68.1  
+# 3 PENDING      45 19.9  
+# 4 Released     26 11.5  
+
+#The resentenced people who are resentenced but in the list have pending status
+  
+new_sentences <- resentenced %>%
+  group_by(resentenced_results) %>%
+  summarise(people = n()) %>%
+  mutate(pct = people/nrow(resentenced)*100)
+
+yes <- resentenced %>% 
+  filter(resentenced_results != "25y - 40y") %>%
+  filter(str_detect(resentenced_results, "^2"))
+yes1 <- resentenced %>% 
+  filter(str_detect(resentenced_results, "^3"))
+yes3 <-resentenced %>% 
+  filter(resentenced_results != "40y - 75y") %>%
+  filter(str_detect(resentenced_results, "^4"))
+
+new_sentences <- resentenced %>% 
+  mutate(resentenced_results = ifelse(
+    (resentenced_results %in% yes$resentenced_results),
+    "20-60", 
+    resentenced_results
+  )) %>% 
+  mutate(resentenced_results = ifelse(
+      resentenced_results == ("25y - 40y"), 
+       "20-40", 
+       resentenced_results)) %>%
+  mutate(resentenced_results = ifelse(
+    (resentenced_results %in% yes1$resentenced_results),
+    "30-60", 
+    resentenced_results
+  )) %>%
+  mutate(resentenced_results = ifelse(
+    (resentenced_results %in% yes3$resentenced_results),
+    "40-60", 
+    resentenced_results
+  )) %>%
+  mutate(resentenced_results = ifelse(
+    resentenced_results == ("40y - 75y"), 
+    "40-75", 
+    resentenced_results))
+
+new_sentences %>%
+  group_by(resentenced_results) %>%
+  summarise(people = n()) %>%
+  mutate(pct = people/nrow(resentenced)*100)
+
+# resentenced_results people    pct
+# <chr>                <int>  <dbl>
+# 1 20-40                    1  0.549
+# 2 20-60                   65 35.7  
+# 3 30-60                   70 38.5  
+# 4 40-60                   29 15.9  
+# 5 40-75                    1  0.549
+# 6 DECEASED                 1  0.549
+# 7 LIFE                    15  8.24 
+
+## most people who got a new sentence got  20-60 or 30-60 years 
+## look at it how it differs among offense code
+
+unique(new_sentences$offense_code)
+
+#"750.316B" "750.316A" "750.316"  "750.316C" 
+# according to https://dhhs.michigan.gov/OLMWeb/ex/CrimeCodesExhibit/CrimeCodesExhibit.pdf we can create a look up table
+
+crimes <- data.frame("offense_code" = c("750.316B", "750.316A", "750.316", "750.316C"),
+                     "crime" = c("HOMICIDE - FELONY MURDER", "HOMICIDE-MURDER FIRST-DEGREE - PREMEDIDATED", 
+                                 "HOMICIDE", "HOMICIDE-OPEN MURDER - STATUTORY SHORT FORM"))
+
+new_sentences <- new_sentences %>% 
+  left_join(crimes)
+
+new_sentences %>%
+  group_by(resentenced_results, offense_code) %>%
+  summarise(people = n()) %>%
+  mutate(pct = people/nrow(resentenced)*100) %>% 
+  
