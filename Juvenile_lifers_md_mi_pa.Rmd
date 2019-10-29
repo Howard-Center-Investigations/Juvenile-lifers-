@@ -1,0 +1,34 @@
+---
+title: "Juvenile lifers"
+author: "Riin Aljas"
+date: "29/10/2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+<!-- Timestamp: leave this in to automatically track when a file is rendered -->
+*Rendered at `r format(Sys.time(), '%I:%M %p, %b. %d, %Y')`*
+
+<!-- Contact info: leave author/reporter/editor contact info here -->
+*Riin Aljas (aljasriin@gmail.com)*
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE, 
+  message = FALSE, 
+  warning = FALSE
+  )
+knitr::opts_knit$set(
+  root.dir = rprojroot::find_rstudio_root_file()
+  )
+```
+
+```{r data & lbraries}
+library(tidyverse)
+library(DT)
+
+source("analysis/etl_florida.R")
+source("analysis_maryland.R")
+source("analysis_michigan.R")
+source("analysis_pennsylvania.R")
+
+```
