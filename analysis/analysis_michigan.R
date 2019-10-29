@@ -10,6 +10,7 @@
 ###GET DATA----
 library(readxl)
 library(tidyverse)
+library(tidyr)
 library(readr)
 library(lubridate)
 library(tidycensus)
@@ -234,15 +235,262 @@ unique(new_sentences$offense_code)
 
 crimes <- data.frame("offense_code" = c("750.316B", "750.316A", "750.316", "750.316C"),
                      "crime" = c("HOMICIDE - FELONY MURDER", "HOMICIDE-MURDER FIRST-DEGREE - PREMEDIDATED", 
-                                 "HOMICIDE", "HOMICIDE-OPEN MURDER - STATUTORY SHORT FORM"))
 
 new_sentences <- new_sentences %>% 
   left_join(crimes)
 
 new_sentences %>%
-  group_by(resentenced_results, crime) %>%
+  group_by(resentenced_results, offense_code) %>%
   summarise(people = n()) %>%
-  mutate(pct = people/nrow(new_sentences*100)) %>%
-  ggplot(new_sentences, mapping = aes(resentenced_results, crime))+
+  mutate(pct = people/nrow(new_sentences)*100) %>%
+  ggplot(new_sentences, mapping = aes(offense_code, pct))+
+  geom_bar(stat = "identity")+
+  facet_wrap(~resentenced_results, ncol = 2)
+  
+##who are the people who are resentenced for life
+
+new_sentences %>%
+  filter(resentenced_results == "LIFE") %>% View()
+
+##almost half of them (7) are from Kent county, did Kent stand out before?
+#when it comes to overall nr of juveniles per persson, then Kent is 18th, yet with 24 people it's 4th. 
+#look into resentenced by county 
+
+
+all_juv_in_county <- lifers %>%
+  group_by(county) %>%
+  summarise(total_people=n())
+
+resentenced_in_county <- lifers %>%
+  filter(resentenced == TRUE)%>%
+  group_by(county) %>%
+  summarise(total_people=n())
+
+all_juv_by_race_resentenced <- 
+  lifers %>%
+  filter(resentenced == TRUE)%>%
+  group_by(race) %>%
+  summarise(total_people=n())
+
+all_juv_by_race <- 
+  lifers %>%
+  group_by(race) %>%
+  summarise(total_people=n())
+
+all_juv_by_race_county <- 
+  lifers %>%
+  group_by(race, county) %>%
+  summarise(total_people=n())
+
+
+new_sentences %>%
+  group_by(resentenced_results, county) %>%
+  summarise(people = n()) %>%
+  left_join(resentenced_in_county, by = "county")%>%
+  mutate(pct_county= people/total_people*100) %>%
+  ggplot(new_sentences, mapping = aes(resentenced_results, pct_county, color = resentenced_results))+
+  geom_bar(stat = "identity")+
+  facet_wrap(~county)
+
+###does Kent county have a super strict judge? we don't know.
+
+### add race to the mix
+
+new_sentences %>%
+  group_by(resentenced_results, county, race) %>%
+  summarise(people = n()) %>%
+  left_join(resentenced_in_county, by = "county")%>%
+  mutate(pct_county= people/total_people*100) %>%
+  ggplot(new_sentences, mapping = aes(race, pct_county, color = resentenced_results))+
+  geom_bar(stat = "identity")+
+  facet_wrap(~county)
+
+new_sentences %>%
+  filter(resentenced_results == "LIFE") %>%
+  group_by(county, race) %>%
+  summarise(people = n()) %>%
+  left_join(resentenced_in_county, by = "county")%>%
+  mutate(pct_county= people/total_people*100) %>%
+  ggplot(new_sentences, mapping = aes(race, people, color = race))+
+  geom_bar(stat = "identity")+
+  facet_wrap(~county)
+
+#don't see much racial disparity in resentenced for life. 
+
+##look into possible acial and geographic disparities more wide than only in resentenced people 
+
+race_result <- new_sentences %>%
+  group_by(race, resentenced_results) %>% 
+  summarise(people = n()) %>%
+  left_join(all_juv_by_race_resentenced, by = "race")%>%
+  mutate(pct_race= people/total_people*100)
+
+###as a whole, more white people have been sentenced to life twice as often compared to black people. 
+### is it because white people live more conservative counties? 
+### we migth wanna pull in red or blue counties for that comparison 
+
+#look the same overall 
+lifers %>%
+  group_by(race, resentenced) %>% 
+  summarise(people = n()) %>%
+  left_join(all_juv_by_race, by = "race")%>%
+  mutate(pct_race= people/total_people*100)
+
+##no racial disparity in overall resentencing, only in the type of resentenced results
+
+### look the same by status
+status_race <- lifers %>%
+  group_by(race, status) %>% 
+  summarise(people = n()) %>%
+  left_join(all_juv_by_race, by = "race") %>%
+  mutate(pct_race= people/total_people*100)
+  
+  ggplot(status_race, mapping = aes(status, pct_race, fill = status))+
+  geom_bar(stat = "identity")+
+  facet_wrap(~race)
+
+### there's little difference between whites and black when it comes to years, more 20-60 in whites compared to blacks, 
+###  yet more 40-60 in whites compared to blacks. 
+
+status_county_race <- lifers %>%
+  filter(race %in% c("Black", "White", "Hispanic"))%>%
+  group_by(race, status, county) %>% 
+  summarise(people = n()) %>%
+  left_join(all_juv_by_race_county, by = c("county", "race")) %>%
+  mutate(pct_race= people/total_people*100)
+ggplot(status_county_race, 
+       mapping = aes(race, pct_race, fill = status))+
+  geom_bar(stat = "identity")+
+  facet_wrap(~county)
+  
+### released are only in handful of counties
+
+lifers %>%
+  filter(status == 'Released') %>% 
+  group_by(race) %>%
+  summarise(people = n()) %>%
+  left_join(all_juv_by_race, by = "race")%>%
+  mutate(pct_race= people/total_people*100)
+
+# race     people total_people pct_race
+# <chr>     <int>        <int>    <dbl>
+# 1 Black        17          258     6.59
+# 2 Hispanic      1           10      10   
+# 3 White         8           96     8.33
+
+#Blacks are released less 
   
   
+status_race <- lifers %>%
+  group_by(race, status) %>% 
+  summarise(people = n()) %>%
+  left_join(all_juv_by_race, by = c("race")) %>%
+  mutate(pct_race= people/total_people*100)
+
+status_race <- pivot_wider(status_race, 
+                           names_from = race,
+                           values_from = c(people,pct))
+
+
+
+
+
+
+
+
+  
+
+#Most of countries where there are high % of released peopel are the ones
+#with low numbers of juveniles to begin with, exception being Philadelphia, 
+#which have a lot of released people. Delaware is the exception, having 26 total 
+#juveniles but low number of released people. Allegheny has a high % of resentenced
+# people.
+
+county_released_or_resentenced_race <- lifers %>%
+  filter(!Status %in% c("Pending", "Resentenced to Life-Life", "Deceased"))%>%
+  group_by(`Committing County`, Race) %>%
+  summarise(total_status = n()) %>%
+  left_join(county_race) %>%
+  mutate(pct_in_county = round((total_status/total_people)*100,2))
+
+county_race <- lifers %>%
+  group_by(`Committing County`, Race) %>%
+  summarise(total_people=n())
+
+
+ggplot(county_released_or_resentenced_race, 
+       aes(Race, pct_in_county))+
+  geom_bar(stat = "identity")+
+  facet_wrap(~`Committing County`)
+
+
+#There's difference in Philadelphia, between the races in counties, most 
+
+
+
+
+
+
+
+lifers %>%
+  filter(!Status %in% c("Pending", "Resentenced to Life-Life", "Deceased")) %>%
+  group_by(`Committing County`, Race) %>%
+  summarise(people = n()) %>%
+  
+  ggplot(lifers, mapping = aes(sentence_year, people))+
+  geom_point()+
+  facet_wrap(~Race)
+
+
+
+blacksoutyear <- lifers %>%
+  filter(Race == "BLACK") %>%
+  group_by(Status, sentence_year) %>%
+  summarise(people= n()) %>%
+  ggplot(lifers, mapping=aes(sentence_year, people))+
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Status)
+
+lifers %>%
+  filter(Race == "HISPANIC") %>%
+  group_by(Status, sentence_year) %>%
+  summarise(people= n()) %>%
+  ggplot(lifers, mapping=aes(sentence_year, people))+
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Status)
+
+
+lifers %>%
+  filter(!Status %in% c("Pending", "Resentenced to Life-Life", "Deceased")) %>%
+  group_by(sentence_year, `Committing County` ) %>%
+  summarise(people = n()) %>%
+  ggplot(lifers, mapping = aes(sentence_year, people))+
+  geom_point()+
+  facet_wrap(~`Committing County`)
+
+
+##doesn't seem a lot of geographical disparity. 
+
+###to do list----
+
+### look into let out age 
+### pull in populations 
+###
+
+county <- lifers %>%
+  group_by(`Committing County`) %>%
+  summarise(total_people=n())
+
+county_status <- lifers %>%
+  group_by(`Committing County`, Status) %>%
+  summarise(total_status = n()) %>%
+  left_join(county_race, by = c("Commiting County", "Race")) %>%
+  mutate(pct_in_county = round((total_status/total_people)*100,2) )
+
+
+county_race <- lifers %>%
+  group_by(`Committing County`, Race) %>%
+  summarise(total_people=n())
+
