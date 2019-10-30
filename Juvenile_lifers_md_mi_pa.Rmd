@@ -252,9 +252,8 @@ grid.arrange(
 
 ###ADD RACIAL PORPORTIONS HERE 
 
-```{r PA race change time}
+```{r PA race black change time}
 
-Race
 
 grid.arrange(
   (lifers %>%
@@ -288,6 +287,7 @@ datatable(by_status <- lifers %>%
   mutate(pct = round((people/nrow(lifers)*100),2)))
 ```
 
+Hispanics have been released/resentenced the most, then blacks then whites. For blacks it might come down to the fact that blacks were among the first being released/resentenced (sometimes already early 2000). That doesn't apply for hispanics though.
 
 
 ```{r PA resentenced race}
@@ -295,7 +295,7 @@ whitesout <- lifers %>%
   filter(Race == "WHITE") %>%
   group_by(Status) %>%
   summarise(people= n()) %>%
-  mutate(pct = round(people/nrow(lifers %>%
+  mutate(pct = round(100*people/nrow(lifers %>%
                          filter(Race == "WHITE")),2))%>%
   mutate(Race = "WHITE")
 
@@ -303,16 +303,16 @@ blacksout <- lifers %>%
   filter(Race == "BLACK") %>%
   group_by(Status) %>%
   summarise(people= n()) %>%
-  mutate(pct = round(people/nrow(lifers %>%
-                             filter(Race == "BLACK")*100),2)) %>%
+  mutate(pct = round(100*people/nrow(lifers %>%
+                             filter(Race == "BLACK")),2)) %>%
   mutate(Race = "BLACK")
 
 hispanicsout <- lifers %>%
   filter(Race == "HISPANIC") %>%
   group_by(Status) %>%
   summarise(people= n()) %>%
-  mutate(pct = round(people/nrow(lifers %>%
-                             filter(Race == "HISPANIC")*100),2)) %>%
+  mutate(pct = round(100*people/nrow(lifers %>%
+                             filter(Race == "HISPANIC")),2)) %>%
   mutate(Race = "HISPANIC")
 
 
@@ -320,8 +320,8 @@ asiansout <- lifers %>%
   filter(Race == "ASIAN") %>%
   group_by(Status) %>%
   summarise(people= n()) %>%
-  mutate(pct = round(people/nrow(lifers %>%
-                                   filter(Race == "ASIAN")*100),2)) %>%
+  mutate(pct = round(100*people/nrow(lifers %>%
+                                   filter(Race == "ASIAN")),2)) %>%
   mutate(Race = "ASIAN")
 
 by_race_status <- bind_rows(blacksout, whitesout, hispanicsout, asiansout)
@@ -347,8 +347,45 @@ datatable(t)
 ```
 
 
-
 **If there has been a change, is there a geographic disparity in who is being affected?**  
 
+```{r PA counties status}
+
+
+
+county <- lifers %>%
+  group_by(`Committing County`) %>%
+  summarise(total_people=n())
+
+county_status <- lifers %>%
+  group_by(`Committing County`, Status) %>%
+  summarise(total_status = n()) %>%
+  left_join(county) %>%
+  mutate(pct_in_county = round((total_status/total_people)*100,2))
+  
+  ggplot(county_status, 
+         mapping  = aes(Status, pct_in_county, color = Status))+
+  geom_bar(stat = "identity")+
+  facet_wrap(~`Committing County`, ncol = 5)
+
+
+released <- county_status %>%
+  filter(Status == "Released")
+
+resentenced <- county_status %>%
+  filter(Status %in% 
+           c("Resentenced (no longer Life-Life)", 
+             "Resentenced (no longer Life-Life)*", 
+             "Resentenced to Life-Life"))
+
+pending <- county_status %>%
+  filter(Status == "Pending")
+```
+
+Most of counties with high amount of pending people have small juvenile population to begin with, exceptions are Dauphin and Delaware. 
+
+Same goes for the counties with re high % of released peopele, exception being Philadelphia, that has released a lot of people. 
+
+Delaware is the exception, having 26 total juveniles but low number of released people. Allegheny has a high % of resentenced people.
 
 
