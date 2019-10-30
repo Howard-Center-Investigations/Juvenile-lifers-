@@ -21,9 +21,6 @@ population <- get_estimates(geography = "county", "population", variables = NULL
               breakdown_labels = NULL, year = 2018, state = "PA", key = "156fda6326a38745b31480cc7848c55e7f4fcf41")
 
 
-#get 2017 (latest) prison population data from BJS
-total_population <- read_csv("data/source/prison_population_2017.csv")
-
 ##create an age column 
 lifers <- lifers %>%
   mutate(age = as.period(interval(DOB, Commitment_Date, "years")))
@@ -108,21 +105,21 @@ by_county <-
 lifers <- lifers %>%
   mutate(sentence_year = year(Sentencing_Date), 
          commitment_year = year(Commitment_Date))
-grid.arrange(
-  (lifers %>%
-     group_by(sentence_year) %>%
-     filter(!any(is.na(sentence_year))) %>%
-     summarise(people = n()) %>%
-     ggplot(lifers, mapping = aes(sentence_year, people))+
-     geom_point()+
-     geom_line()),
-  (lifers %>% 
-     group_by(commitment_year) %>%
-     summarise(people = n()) %>% 
-     ggplot(lifers, mapping = aes(commitment_year, people))+
-     geom_point()+
-     geom_line()), 
-  ncol=2)
+# grid.arrange(
+#   (lifers %>%
+#      group_by(sentence_year) %>%
+#      filter(!any(is.na(sentence_year))) %>%
+#      summarise(people = n()) %>%
+#      ggplot(lifers, mapping = aes(sentence_year, people))+
+#      geom_point()+
+#      geom_line()),
+#   (lifers %>% 
+#      group_by(commitment_year) %>%
+#      summarise(people = n()) %>% 
+#      ggplot(lifers, mapping = aes(commitment_year, people))+
+#      geom_point()+
+#      geom_line()), 
+#   ncol=2)
 
 
 

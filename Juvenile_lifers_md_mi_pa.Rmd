@@ -26,11 +26,329 @@ knitr::opts_knit$set(
 library(tidyverse)
 library(DT)
 ```
-##**MARYLAND**##
+# **MARYLAND**
 
-
+```{r maryland get data}
 source("analysis/analysis_maryland.R")
-source("analysis/analysis_michigan.R")
-source("analysis/analysis_pennsylvania.R")
+```
+## What is the overall number of juveniles currently serving a life sentence?
+
+There are **```r n_distinct(lifers$dc_number)```** juveniles serving a life sentence. **99%** of juvenile prisoners are male.
+***
+
+
+## What is the racial breakdown of juvenile lifers in each state?
+
+```{r md race}
+pop_md <- total_population %>%
+  filter(State == "Maryland/e")
+race <- lifers_dem %>%
+  group_by(Race) %>%
+  summarise(people = n()) %>%
+  mutate(pct = round((people/nrow(lifers_dem)*100),2)) 
+
+race$Race <- gsub("Hispanic or Latino", "Hispanic", race$Race)
+race$Race <- gsub("Native American or Alaskan Native", "American Indian/Alaska Native",
+                  race$Race)
+race$Race <-  gsub("Native Hawaiian or Pacific Islander", "Native Hawaiian/Other Pacific Islander",
+                  race$Race)
+race$Race <-  gsub("Other race", "Other",
+                  race$Race)
+  
+pop_md<- pivot_longer(pop_md, cols = c(2:12), names_to = "Race", values_to = "total_people") 
+left_join(race, pop_md, by = "Race") %>%
+  select(-State) %>% 
+  mutate(pct_own_race_total = round((people/total_people*100),2),
+         pct_of_total_pop = round((total_people/sum(total_people)*100),2)) %>%
+  mutate(disparity = (pct - pct_of_total_pop))%>%
+  datatable()
 
 ```
+
+When we look at the racial breakdown above, we see that when we compare to the overall prison population, there are disporportionately more black people (**69% of all MD prisoners are black compared to 77% of juveniles**) compared to white people, where the situation is the opposite (**25% of all MD prisoners are white compared to 14% of juveniles**). With hispanic people the difference is small, only 1%.   
+
+***
+
+
+## Has there been a change since 2016, the date of a key supreme court case,  in the number of juvenile lifers in each state? If so, what is the change.
+
+
+Maryland has only released 3 people so far, hence this question doesn't apply here. Yet it's still interesting to see how the numbers have changed in the past. 
+
+```{r MD change}
+lifers <- lifers %>%
+  mutate(admission_year = year(ADMISSION_DATE), 
+         offense_year = year(offense_date))
+grid.arrange(
+  (lifers %>%
+     group_by(offense_year) %>%
+     filter(!any(is.na(offense_year))) %>%
+     summarise(people = n()) %>%
+     ggplot(lifers, mapping = aes(offense_year, people))+
+     geom_point()+
+     geom_line()+
+     geom_smooth()),
+  (lifers %>% 
+     group_by(admission_year) %>%
+     summarise(people = n()) %>% 
+     #filter(admission_year > 2000)%>%
+     ggplot(lifers, mapping = aes(admission_year, people))+
+     geom_point()+
+     geom_line()+
+     geom_smooth()), 
+  ncol=2)
+
+
+```
+
+We use both admission dates and offence dates, because MD's Department of Correction doesn't have offense dates for all the juveniles, so they use admission dates for some of them. The graphs show the incarceration rate of juvenile "lifers"peaked in the mid-ninenties and started to fall ever since.   
+
+*There isn't a sharp fall in sentencing juveniles to serve life sentences after 2014 amd 2016, but we're still waiting to hear back from MD about whether they gave us data about all juvenile lifers or lifers with the chance of parole.*    
+
+***
+
+
+## If there has been a change, has the racial distribution of people affected the same as the racial distribution of the juvenile lifer population as a whole??
+
+Again, Maryland has only released/resentenced three people, so this doesn't apply. However we can see whether the racial distribution has changed over time.  
+```{r MD race change time}
+
+
+grid.arrange(
+  (lifers %>%
+     group_by(offense_year, Race) %>%
+     filter(!any(is.na(offense_year))) %>%
+     summarise(people = n()) %>%
+     ggplot(lifers, mapping = aes(offense_year, people, color = Race))+
+     geom_point()+
+     geom_line()+
+     geom_smooth()+
+     theme(legend.position="bottom")),
+  (lifers %>% 
+     group_by(admission_year, Race) %>%
+     summarise(people = n()) %>% 
+     #filter(admission_year > 2000)%>%
+     ggplot(lifers, mapping = aes(admission_year, people, color = Race))+
+     geom_point()+
+     geom_line()+
+     geom_smooth()+
+     theme(legend.position="bottom")), 
+  ncol=2)
+
+```
+***
+
+## If there has been a change, is there a geographic disparity in who is being affected?**
+
+Doesn't apply again. But is there any previous disparity among counties? 
+
+```{r MD counties}
+by_county <- lifers %>%
+  group_by(Jurisdiction) %>%
+  summarise(people = n()) %>%
+  mutate(pct = people/nrow(lifers)*100) %>%
+  rename(NAME = Jurisdiction)
+
+population$NAME <- gsub(", Maryland", "", population$NAME) 
+population$NAME <- gsub("Baltimore city", "Baltimore City", population$NAME)  #<---clean up to line with existing data
+
+population <- population %>% 
+  filter(variable == "POP") 
+
+
+by_county <- by_county %>%
+  left_join(population, by = "NAME") %>%
+  select(1:3, 6) 
+
+by_county <- 
+  by_county %>%
+  mutate(juvenile_per_person = people/value)
+
+datatable(by_county)
+```
+
+Four counties stand out having more juveniles than they "should", but not much: 
+ - They're Frederick, Allegany, Wahisngton and Montgomery 
+
+Dorchester, Wicomico, Talbot and Baltimore City, on the other hand, have less than they "should".   
+
+***
+
+# PENNSYLVANIA 
+
+```{r PA get data}
+source("analysis/analysis_pennsylvania.R")
+```
+
+**What is the overall number of juveniles in each state currently serving a life sentence?**  
+
+There are **```r n_distinct(lifers$dc_number)```** juveniles serving a life sentence. **98%** of juvenile prisoners are male.  
+
+
+**What is the racial breakdown of juvenile lifers in each state? Are the racial splits out of proportion to the prison population as a whole, or the state population as a whole?**  
+
+When we look at the racial breakdown below, we see that when we compare juveniles to the overall prison population in Pennsylvania, hispanic juveniles have been imprisoned disporpotionately more, compared to whites and blacks (**9.79 vs 6.22, 71 vs 70, 18 vs 24%**), Yet, similarly to Maryland, Pennsylvania has notable differences when it comes to juvenile white population against other races. 
+
+**in becoming days I'm planning to see whether this has changed over time**
+
+```{r PA race}
+pop_pa <- total_population %>%
+  filter(State == "Pennsylvania")
+
+
+race <- lifers %>%
+  group_by(Race) %>%
+  summarise(people = n()) %>%
+  mutate(pct = round((people/nrow(lifers)*100),2)) 
+  
+
+race$Race <- gsub("BLACK", "Black", race$Race)
+race$Race <- gsub("ASIAN", "Asian",
+                  race$Race)
+race$Race <-  gsub("HISPANIC", "Hispanic",
+                  race$Race)
+race$Race <-  gsub("WHITE", "White",
+                  race$Race)
+
+pop_pa<- pivot_longer(pop_pa, cols = c(2:12), names_to = "Race", values_to = "total_people")
+left_join(race, pop_md, by = "Race") %>%
+  select(-State) %>%
+  mutate(pct_own_race_total = round((people/total_people*100),2),
+         pct_of_total_pop = round((total_people/sum(total_people)*100),2)) %>%
+  mutate(disparity = round((pct - pct_of_total_pop),2)) %>%
+  datatable()
+
+```
+**Has there been a change since 2016, the date of a key supreme court case, in the number of juvenile lifers in each state?**   
+
+The graphs below show how incarceration rate peaked in mdininenties and started to fall in early 2000-s. 
+
+Unlike what we saw in Maryland previously, there's a clear decrease in sentencing juveniles to life sentences after 2014 and 2016 decisions. 
+
+The dramatic increase in the sentence_year graph shows, how 2014 supreme court decision paved rapidly way to recentencing juveniles. 
+
+```{r PA race change time}
+
+grid.arrange(
+  (lifers %>%
+     group_by(sentence_year) %>%
+     filter(!any(is.na(sentence_year))) %>%
+     summarise(people = n()) %>%
+     ggplot(lifers, mapping = aes(sentence_year, people))+
+     geom_point()+
+     geom_line()),
+  (lifers %>%
+     group_by(commitment_year) %>%
+     summarise(people = n()) %>%
+     ggplot(lifers, mapping = aes(commitment_year, people))+
+     geom_point()+
+     geom_line()),
+  ncol=2)
+
+```
+
+
+**If there has been a change, has the racial distribution of people affected the same as the racial distribution of the juvenile lifer population as a whole?**  
+
+###ADD RACIAL PORPORTIONS HERE 
+
+```{r PA race change time}
+
+Race
+
+grid.arrange(
+  (lifers %>%
+     group_by(sentence_year, Race) %>%
+     filter(!any(is.na(sentence_year))) %>%
+     summarise(people = n()) %>%
+     ggplot(lifers, mapping = aes(sentence_year, people, color = Race))+
+     geom_point()+
+     geom_line()+
+     theme(legend.position = "bottom")),
+  (lifers %>%
+     group_by(commitment_year, Race) %>%
+     summarise(people = n()) %>%
+     ggplot(lifers, mapping = aes(commitment_year, people, color = Race))+
+     geom_point()+
+     geom_line()+
+     theme(legend.position = "bottom")),
+  ncol=2)
+
+```
+
+**How many of them have been resentenced and released **
+
+Aronund 82 % of juveniles have been either resentenced to no longer life or released. 15% are waiting to be either resentenced or released. 
+Three people have died and nine (1.7%) have been resentenced but sentenced to serve life in prison. 
+
+```{r PA resentenced  }
+datatable(by_status <- lifers %>% 
+  group_by(Status) %>%
+  summarise(people = n()) %>%
+  mutate(pct = round((people/nrow(lifers)*100),2)))
+```
+
+
+
+```{r PA resentenced race}
+whitesout <- lifers %>%
+  filter(Race == "WHITE") %>%
+  group_by(Status) %>%
+  summarise(people= n()) %>%
+  mutate(pct = round(people/nrow(lifers %>%
+                         filter(Race == "WHITE")),2))%>%
+  mutate(Race = "WHITE")
+
+blacksout <- lifers %>%
+  filter(Race == "BLACK") %>%
+  group_by(Status) %>%
+  summarise(people= n()) %>%
+  mutate(pct = round(people/nrow(lifers %>%
+                             filter(Race == "BLACK")*100),2)) %>%
+  mutate(Race = "BLACK")
+
+hispanicsout <- lifers %>%
+  filter(Race == "HISPANIC") %>%
+  group_by(Status) %>%
+  summarise(people= n()) %>%
+  mutate(pct = round(people/nrow(lifers %>%
+                             filter(Race == "HISPANIC")*100),2)) %>%
+  mutate(Race = "HISPANIC")
+
+
+asiansout <- lifers %>%
+  filter(Race == "ASIAN") %>%
+  group_by(Status) %>%
+  summarise(people= n()) %>%
+  mutate(pct = round(people/nrow(lifers %>%
+                                   filter(Race == "ASIAN")*100),2)) %>%
+  mutate(Race = "ASIAN")
+
+by_race_status <- bind_rows(blacksout, whitesout, hispanicsout, asiansout)
+
+
+by_race_status <- pivot_wider(by_race_status, 
+                 names_from = Race,
+                 values_from = c(people,pct))
+ 
+
+t <- by_race_status %>%
+  select(Status, 
+         nr_black_people = people_BLACK, 
+         pct_BLACK, 
+         nr_white_people = people_WHITE, 
+         pct_WHITE, 
+         nr_hispanic_people = people_HISPANIC, 
+         pct_HISPANIC, 
+         nr_asian_people = people_ASIAN, 
+         pct_ASIAN)
+
+datatable(t)
+```
+
+
+
+**If there has been a change, is there a geographic disparity in who is being affected?**  
+
+
+

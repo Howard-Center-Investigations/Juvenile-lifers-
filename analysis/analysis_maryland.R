@@ -183,23 +183,23 @@ by_county <-
 lifers <- lifers %>%
   mutate(admission_year = year(ADMISSION_DATE), 
          offense_year = year(offense_date))
-
-grid.arrange(
-  (lifers %>%
-     group_by(offense_year) %>%
-     filter(!any(is.na(offense_year))) %>%
-     summarise(people = n()) %>%
-     ggplot(lifers, mapping = aes(offense_year, people))+
-     geom_point()+
-     geom_line()),
-  (lifers %>% 
-     group_by(admission_year) %>%
-     summarise(people = n()) %>% 
-     #filter(admission_year > 2000)%>%
-     ggplot(lifers, mapping = aes(admission_year, people))+
-     geom_point()+
-     geom_line()), 
-  ncol=2)
+# 
+# grid.arrange(
+#   (lifers %>%
+#      group_by(offense_year) %>%
+#      filter(!any(is.na(offense_year))) %>%
+#      summarise(people = n()) %>%
+#      ggplot(lifers, mapping = aes(offense_year, people))+
+#      geom_point()+
+#      geom_line()),
+#   (lifers %>% 
+#      group_by(admission_year) %>%
+#      summarise(people = n()) %>% 
+#      #filter(admission_year > 2000)%>%
+#      ggplot(lifers, mapping = aes(admission_year, people))+
+#      geom_point()+
+#      geom_line()), 
+#   ncol=2)
 
 ##numbers are too small to draw any conclusions about 
 ## whether less judges sentence them for life after 
@@ -207,7 +207,7 @@ grid.arrange(
 
 ###to do list-----
 
-###ADD ROW ABOUT CUMULATIVE NR OF PEOPLE BY YEAR 
+
 ### LOOK INTO IMPOSITION DATE (
 ### will contact MD to get clarity about what's the sentence date, what's imposition date and how to understand who's with parole, 
 ### who's without parole and who's resentenced etc 
