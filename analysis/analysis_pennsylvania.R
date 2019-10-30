@@ -22,7 +22,7 @@ population <- get_estimates(geography = "county", "population", variables = NULL
 
 
 #get 2017 (latest) prison population data from BJS
-population <- read_csv("data/source/prison_population_2017.csv")
+total_population <- read_csv("data/source/prison_population_2017.csv")
 
 ##create an age column 
 lifers <- lifers %>%
@@ -101,7 +101,7 @@ by_county <- by_county %>%
 
 by_county <- 
   by_county %>%
-  mutate(juvenile_per_person = people/value))
+  mutate(juvenile_per_person = people/value)
 
 ###sentence time----
 
@@ -263,8 +263,8 @@ pending <- county_status %>%
 
 summary(released$pct_in_county)
 
-Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-7.69   18.34   36.36   43.30   52.96  100.00 
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+# 7.69   18.34   36.36   43.30   52.96  100.00 
 
 #Most of countries where there are high % of released peopel are the ones
 #with low numbers of juveniles to begin with, exception being Philadelphia, 
@@ -272,17 +272,16 @@ Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
 #juveniles but low number of released people. Allegheny has a high % of resentenced
 # people.
 
+county_race <- lifers %>%
+  group_by(`Committing County`, Race) %>%
+  summarise(total_people=n())
+
 county_released_or_resentenced_race <- lifers %>%
   filter(!Status %in% c("Pending", "Resentenced to Life-Life", "Deceased"))%>%
   group_by(`Committing County`, Race) %>%
   summarise(total_status = n()) %>%
   left_join(county_race) %>%
   mutate(pct_in_county = round((total_status/total_people)*100,2))
-
-county_race <- lifers %>%
-  group_by(`Committing County`, Race) %>%
-  summarise(total_people=n())
-
 
 ggplot(county_released_or_resentenced_race, 
        aes(Race, pct_in_county))+
@@ -349,13 +348,15 @@ county <- lifers %>%
   group_by(`Committing County`) %>%
   summarise(total_people=n())
 
-county_status <- lifers %>%
-  group_by(`Committing County`, Status) %>%
-  summarise(total_status = n()) %>%
-  left_join(county_race, by = c("Commiting County", "Race")) %>%
-  mutate(pct_in_county = round((total_status/total_people)*100,2) )
-
-
 county_race <- lifers %>%
   group_by(`Committing County`, Race) %>%
   summarise(total_people=n())
+
+county_status <- lifers %>%
+  group_by(`Committing County`, Status) %>%
+  summarise(total_status = n()) %>%
+  left_join(county) %>%
+  mutate(pct_in_county = round((total_status/total_people)*100,2) )
+
+
+

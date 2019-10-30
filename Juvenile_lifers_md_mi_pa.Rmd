@@ -25,10 +25,12 @@ knitr::opts_knit$set(
 ```{r data & lbraries}
 library(tidyverse)
 library(DT)
+```
+##**MARYLAND**##
 
-source("analysis/etl_florida.R")
-source("analysis_maryland.R")
-source("analysis_michigan.R")
-source("analysis_pennsylvania.R")
+
+source("analysis/analysis_maryland.R")
+source("analysis/analysis_michigan.R")
+source("analysis/analysis_pennsylvania.R")
 
 ```

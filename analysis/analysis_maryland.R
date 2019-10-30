@@ -18,7 +18,7 @@ lifers <- lifers[-c(364),]  #remove empty row
 lifers <- lifers %>%
   rename(dc_number = `CL#`,
          offense_date = DATE_OF_OFFENSE) #standardise column names to reuse scripts
-glimpse(lifers)
+
 #get 2018 populations form census data 
 
 population <- get_estimates(geography = "county", "population", 
@@ -26,8 +26,15 @@ population <- get_estimates(geography = "county", "population",
                             breakdown_labels = NULL, year = 2018, state = "MD", key = "156fda6326a38745b31480cc7848c55e7f4fcf41")
 
 #get 2017 (latest) prison population data from BJS
-population <- read_csv("data/source/prison_population_2017.csv")
-
+total_population <- prison_population_2017 <- read_delim("data/source/prison_population_2017.csv", 
+                                                         ";", escape_double = FALSE, col_types = cols(`American Indian/Alaska Native` = col_integer(), 
+                                                                                                      Asian = col_integer(), Black = col_integer(), 
+                                                                                                      `Did not report` = col_integer(), 
+                                                                                                      Hispanic = col_integer(), `Native Hawaiian/Other Pacific Islander` = col_integer(), 
+                                                                                                      Other = col_integer(), Total = col_integer(), 
+                                                                                                      `Two or more races` = col_integer(), 
+                                                                                                      Unknown = col_integer(), White = col_integer()), 
+                                                         trim_ws = TRUE)
 
 ##create an age column. use disposition date for the ones who didn't have offense date
 ## MD data people have explanation why it's ok to do it like that
@@ -36,21 +43,12 @@ population <- read_csv("data/source/prison_population_2017.csv")
 lifers <- lifers %>%
   mutate(age = ifelse(lifers$offense_date %in% c(NA), 
                       interval(DOB, ADMISSION_DATE), 
-                      interval(DOB, offense_date))) %>%
-  mutate(age = seconds(age)) %>%
-  mutate(age = dyears(age))
-  
+                      interval(DOB, offense_date)))
 
-
-
-
-##create an age column 
-lifers <- lifers %>%
-  mutate(age = as.period(interval(DOB, Commitment_Date, "years")))
 #for some reason as.period(interval, $DOB, IMPOSITION_DATE(same for offense_date)
 #gives me zeros, tried several ways, couldn't fix, to save time, will do it manually
 
-lifers$age <- round(lifers$age/365/24/60/60)
+lifers$age <- (lifers$age/365/24/60/60)
 nrow(is.na(lifers$age))
 
 
@@ -144,13 +142,13 @@ lifers_dem %>%
 
 ####geography----
 
-nrow(is.na(lifers$Jurisdiction)) <- #null
+nrow(is.na(lifers$Jurisdiction)) #null
 
 by_county <- lifers %>%
   group_by(Jurisdiction) %>%
   summarise(people = n()) %>%
   mutate(pct = people/nrow(lifers)*100) %>%
-  rename(NAME = Jurisdiction) <- #rename for population data
+  rename(NAME = Jurisdiction) #<--rename for population data
 
 
 

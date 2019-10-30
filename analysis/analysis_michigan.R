@@ -31,7 +31,7 @@ population <- get_estimates(geography = "county", "population", variables = NULL
 
 
 #get 2017 (latest) prison population data from BJS
-population <- read_csv("data/source/prison_population_2017.csv")
+total_population <- read_csv("data/source/prison_population_2017.csv")
 
 ###LOOK INTO DATA
 
@@ -163,14 +163,14 @@ resentenced %>%
   group_by(status) %>%
   summarise(people = n()) %>%
   mutate(pct = people/nrow(resentenced)*100)
-
-status   people    pct
-<chr>     <int>  <dbl>
-  <chr>     <int>  <dbl>
-# 1 DECEASED      1  0.442
-# 2 FALSE       154 68.1  
-# 3 PENDING      45 19.9  
-# 4 Released     26 11.5  
+# 
+# status   people    pct
+# <chr>     <int>  <dbl>
+#   <chr>     <int>  <dbl>
+# # 1 DECEASED      1  0.442
+# # 2 FALSE       154 68.1  
+# # 3 PENDING      45 19.9  
+# # 4 Released     26 11.5  
 
 #The resentenced people who are resentenced but in the list have pending status
   
@@ -237,7 +237,8 @@ unique(new_sentences$offense_code)
 # according to https://dhhs.michigan.gov/OLMWeb/ex/CrimeCodesExhibit/CrimeCodesExhibit.pdf we can create a look up table
 
 crimes <- data.frame("offense_code" = c("750.316B", "750.316A", "750.316", "750.316C"),
-                     "crime" = c("HOMICIDE - FELONY MURDER", "HOMICIDE-MURDER FIRST-DEGREE - PREMEDIDATED", 
+                     "crime" = c("HOMICIDE - FELONY MURDER", "HOMICIDE-MURDER FIRST-DEGREE - PREMEDIDATED",
+                                 "HOMICIDE", "HOMICIDE - OPEN MURDER - STATUTORY SHORT FORM"))
 
 new_sentences <- new_sentences %>% 
   left_join(crimes)
@@ -253,7 +254,7 @@ new_sentences %>%
 ##who are the people who are resentenced for life
 
 new_sentences %>%
-  filter(resentenced_results == "LIFE") %>% View()
+  filter(resentenced_results == "LIFE") 
 
 ##almost half of them (7) are from Kent county, did Kent stand out before?
 #when it comes to overall nr of juveniles per persson, then Kent is 18th, yet with 24 people it's 4th. 
