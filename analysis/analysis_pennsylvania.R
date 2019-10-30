@@ -286,7 +286,6 @@ ggplot(county_released_or_resentenced_race,
   facet_wrap(~`Committing County`)
 
 
-#There's difference in Philadelphia, between the races in counties, most 
 
 
 

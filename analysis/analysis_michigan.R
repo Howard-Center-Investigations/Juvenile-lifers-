@@ -31,7 +31,16 @@ population <- get_estimates(geography = "county", "population", variables = NULL
 
 
 #get 2017 (latest) prison population data from BJS
-total_population <- read_csv("data/source/prison_population_2017.csv")
+total_population <- prison_population_2017 <- read_delim("data/source/prison_population_2017.csv", 
+                                                         ";", escape_double = FALSE, col_types = cols(`American Indian/Alaska Native` = col_integer(), 
+                                                                                                      Asian = col_integer(), Black = col_integer(), 
+                                                                                                      `Did not report` = col_integer(), 
+                                                                                                      Hispanic = col_integer(), `Native Hawaiian/Other Pacific Islander` = col_integer(), 
+                                                                                                      Other = col_integer(), Total = col_integer(), 
+                                                                                                      `Two or more races` = col_integer(), 
+                                                                                                      Unknown = col_integer(), White = col_integer()), 
+                                                         trim_ws = TRUE)
+
 
 ###LOOK INTO DATA
 
@@ -130,23 +139,23 @@ lifers <- lifers %>%
   mutate(resentence_year = year(resentence_date),
          offense_year = year(offense_date))
          
-grid.arrange(
-  (lifers %>%
-     group_by(offense_year) %>%
-     filter(!any(is.na(offense_year))) %>%
-     summarise(people = n()) %>%
-     ggplot(lifers, mapping = aes(offense_year, people))+
-     geom_point()+
-     geom_line()),
-  (lifers %>% 
-     group_by(resentence_year) %>%
-     summarise(people = n()) %>% 
-     ggplot(lifers, mapping = aes(resentence_year, people))+
-     geom_point()+
-     geom_line()), 
-  ncol=2)
-
-
+# grid.arrange(
+#   (lifers %>%
+#      group_by(offense_year) %>%
+#      filter(!any(is.na(offense_year))) %>%
+#      summarise(people = n()) %>%
+#      ggplot(lifers, mapping = aes(offense_year, people))+
+#      geom_point()+
+#      geom_line()),
+#   (lifers %>% 
+#      group_by(resentence_year) %>%
+#      summarise(people = n()) %>% 
+#      ggplot(lifers, mapping = aes(resentence_year, people))+
+#      geom_point()+
+#      geom_line()), 
+#   ncol=2)
+# 
+# 
 
 ###Status----
 lifers %>% 

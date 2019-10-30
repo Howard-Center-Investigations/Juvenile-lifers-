@@ -388,4 +388,149 @@ Same goes for the counties with re high % of released peopele, exception being P
 
 Delaware is the exception, having 26 total juveniles but low number of released people. Allegheny has a high % of resentenced people.
 
+## **MICHIGAN**
 
+```{r MI data}
+source("analysis/analysis_michigan.R")
+```
+
+**What is the overall number of juveniles in each state currently serving a life sentence?**
+
+There are **```r n_distinct(lifers$dc_number)```** juveniles serving a life sentence. **97%** of juvenile prisoners are male. 
+
+
+**What is the racial breakdown of juvenile lifers in each state?**
+
+Michigan differs from Maryland and Pennsylvania, because the racial breakdown is almost entirely in line with the racial breakdwon in total prison population. What is more, unlike MD and PA, it doesn't have notably less white juveniles compared to overall white population. 
+
+
+```{r MI race}
+pop_mi <- total_population %>%
+  filter(State == 	"Michigan/e")
+race <- lifers %>%
+  group_by(race) %>%
+  summarise(people = n()) %>%
+  mutate(pct = round((people/nrow(lifers)*100),2)) %>%
+  rename(Race = race)
+
+
+race$Race <- gsub("Native American", "American Indian/Alaska Native",
+                  race$Race)
+# race$Race <-  gsub("Native Hawaiian or Pacific Islander", "Native Hawaiian/Other Pacific Islander",
+#                   race$Race)
+# race$Race <-  gsub("Other race", "Other",
+#                   race$Race)
+ 
+pop_mi<- pivot_longer(pop_mi, cols = c(2:12), names_to = "Race", values_to = "total_people") 
+left_join(race, pop_md, by = "Race") %>%
+  select(-State) %>% 
+  mutate(pct_own_race_total = round((people/total_people*100),2),
+         pct_of_total_pop = round((total_people/sum(total_people, na.rm = T)*100),2)) %>%
+  mutate(disparity = (pct - pct_of_total_pop)) %>%
+  datatable()
+
+```
+
+
+**Has there been a change since 2016, the date of a key supreme court case, in the number of juvenile lifers in each state?**
+
+Similarly to MD and PA, incarceration rate of juvenile lifers peaked in mid-nineties and then started to fall. It's notable that there isn't a juvenile who has been sentenced after 2015. In parallel, there's a steep rise in resentencing after the 2014 and 2016 supreme court decisions.  
+
+The graphs show, how the increase in incarceration rates affected black juveniles so much more than white or hispanic youth. This applies for all three states in our analysis.  
+
+Overall, half of Michigan juvenile lifers have gotten a resentence. 
+ - 7% of all juveniles have been released
+ - 38% have gotten a new sentence instead of life sentence(most of them got either 20-60 or 30-60 years, some 40-60)
+ - 12 % people are either waiting for a set resentence hearing to begin or their decision 
+ - 4% got their resentence, but they were again given a life sentence
+ - rest of them, 39%, are serving life and there's yet no information about their future resentencing 
+
+
+```{r MI change in time}
+
+lifers <- lifers %>%
+  mutate(resentence_year = year(resentence_date),
+         offense_year = year(offense_date))
+         
+grid.arrange(
+  (lifers %>%
+     group_by(offense_year, race) %>%
+     filter(!any(is.na(offense_year))) %>%
+     summarise(people = n()) %>%
+     ggplot(lifers, mapping = aes(offense_year, people, color = race))+
+     geom_point()+
+     geom_line()+
+     theme(legend.position = "bottom")),
+  (lifers %>%
+     group_by(resentence_year, race) %>%
+     summarise(people = n()) %>%
+     ggplot(lifers, mapping = aes(resentence_year, people, color = race))+
+     geom_point()+
+     geom_line()+
+     theme(legend.position = "bottom")),
+  ncol=2)
+
+
+
+
+```
+
+It's notewrothy, that almost half of people who got resentenced back to life (7 juveniles) are from Kent County. When it comes to nr of juveniles per person, then Kent is 18th, yet with absolute numbers (24 peopl) it's 4th. So, Kent County doesn't particularly stand out, so something else might be going on. The offense dates for "re-lifers" are all different, so it's not one horrific crime. More reporting is needed. 
+
+Let's look into counties more deeply. Graphs below show the status of resentenced juveniles in Michigan counties. The bars show the porportion of resentence decision in comparison to the entire juvenile lifer population in this country. Simply put we see that St Clair and Ottawa have high life-to-life columns, because they only have so little juveniles to begin with. Whereas Macomb and Kent actually stand out by resentencing people back to life more than one would excpect. 
+
+
+```{r MI counties}
+
+all_juv_in_county <- lifers %>%
+  group_by(county) %>%
+  summarise(total_people=n())
+
+resentenced_in_county <- lifers %>%
+  filter(resentenced == TRUE)%>%
+  group_by(county) %>%
+  summarise(total_people=n())
+
+all_juv_by_race_resentenced <- 
+  lifers %>%
+  filter(resentenced == TRUE)%>%
+  group_by(race) %>%
+  summarise(total_people=n())
+
+all_juv_by_race <- 
+  lifers %>%
+  group_by(race) %>%
+  summarise(total_people=n())
+
+all_juv_by_race_county <- 
+  lifers %>%
+  group_by(race, county) %>%
+  summarise(total_people=n())
+
+
+new_sentences %>%
+  group_by(resentenced_results, county) %>%
+  summarise(people = n()) %>%
+  left_join(resentenced_in_county, by = "county")%>%
+  mutate(pct_county= people/total_people*100) %>%
+  ggplot(new_sentences, mapping = aes(resentenced_results, pct_county, color = resentenced_results))+
+  geom_bar(stat = "identity")+
+  facet_wrap(~county)
+```
+
+
+When we throw race into the mix, we see that as a whole, more hispanic and white people are resentenced to life more than black people?
+
+Is it because black people live in more liberal counties or were their trials in 1990s less fair? We migth wanna pull in red or blue counties for the first  comparison.
+
+When we look at the ages of released people, we see that there are more old people among black released people. 
+
+```{r MI age}
+released %>% 
+  group_by(current_age, race) %>%
+  summarise(people = n()) %>%
+  ggplot(released, mapping = aes(current_age, people))+
+  geom_bar(stat = "identity")+
+  facet_wrap(~race)+
+  coord_flip()
+```
