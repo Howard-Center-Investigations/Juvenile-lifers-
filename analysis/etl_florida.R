@@ -9,7 +9,7 @@ library(lubridate)
 ####GET THE DATA----
 ###pull in data sent from florida doc (data is up to date from 4/30/19)
 
-rawdata <- read_csv("data/florida_043019.csv")
+rawdata <- read_csv("data/source/florida_043019.csv")
 
 lifers <- rawdata %>% 
   filter(dc_number %in% c("028464", "032257", "050278", "062991", "076331") |
@@ -18,7 +18,7 @@ lifers <- rawdata %>%
 resentence <- rawdata %>% 
   filter(dc_number %in% c("G14126", "H30826", "K74916", "M38196", "R52379", "R64639", "Y38667", "166417"))
 
-release <- readRDS("data/floridareleased.RDS")
+release <- readRDS("data/processed/floridareleased.RDS")
 
 ?readRDS
 
