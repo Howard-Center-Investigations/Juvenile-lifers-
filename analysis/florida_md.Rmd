@@ -1,0 +1,199 @@
+---
+title: "Juvenile lifers - Florida analysis"
+author: "Riin Aljas"
+date: "29/10/2019"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+<!-- Timestamp: leave this in to automatically track when a file is rendered -->
+*Rendered at `r format(Sys.time(), '%I:%M %p, %b. %d, %Y')`*
+
+<!-- Contact info: leave author/reporter/editor contact info here -->
+*Riin Aljas (aljasriin@gmail.com)*
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE, 
+  message = FALSE, 
+  warning = FALSE
+  )
+knitr::opts_knit$set(
+  root.dir = rprojroot::find_rstudio_root_file()
+  )
+```
+
+```{r data & lbraries}
+library(tidyverse)
+library(DT)
+library(ggplot2)
+library(gridExtra)
+library(tidycensus)
+
+```
+
+
+# **FLORIDA**
+```{r get data}
+
+rawdata <- read_csv("data/source/florida_043019.csv")
+
+lifers <- rawdata %>% 
+  filter(dc_number %in% c("028464", "032257", "050278", "062991", "076331") |
+           sentence_length == "99998")
+
+resentence <- rawdata %>% 
+  filter(dc_number %in% c("G14126", "H30826", "K74916", "M38196", "R52379", "R64639", "Y38667", "166417"))
+
+release <- readRDS("data/processed/floridareleased.RDS")
+
+population <- get_estimates(geography = "county", "population", 
+                            variables = NULL, breakdown = NULL, 
+                            breakdown_labels = NULL, year = 2018, state = "FL", key = "156fda6326a38745b31480cc7848c55e7f4fcf41")
+
+
+#####RELEASE----
+
+release_offenses <- read.csv("~/Desktop/INMATE_RELEASE_OFFENSES_CPS.txt")
+release_full <- read.csv("~/Desktop/INMATE_RELEASE_ROOT.txt")
+
+```
+
+## What is the overall number of juveniles currently serving a life sentence?
+
+There are **```r n_distinct(lifers$dc_number)```** juveniles serving a life sentence. **99%** of juvenile prisoners are male.
+***
+## What is the racial breakdown of juvenile lifers in each state?
+
+```{r md race}
+total_population <- prison_population_2017 <- read_delim("data/source/prison_population_2017.csv", 
+                                                         ";", escape_double = FALSE, col_types = cols(`American Indian/Alaska Native` = col_integer(), 
+                                                                                                      Asian = col_integer(), Black = col_integer(), 
+                                                                                                      `Did not report` = col_integer(), 
+                                                                                                      Hispanic = col_integer(), `Native Hawaiian/Other Pacific Islander` = col_integer(), 
+                                                                                                      Other = col_integer(), Total = col_integer(), 
+                                                                                                      `Two or more races` = col_integer(), 
+                                                                                                      Unknown = col_integer(), White = col_integer()), 
+                                                         trim_ws = TRUE)
+pop_fl <- total_population %>%
+  filter(State == "Florida/d") %>%
+  as.data.frame(toupper())
+
+by_dc <- lifers %>%
+  group_by(race, dc_number) %>%
+  summarise(people = n()) %>%
+  group_by(race) %>%
+  summarise(people = n())
+
+
+race <- by_dc %>% 
+  mutate(pct = people/n_distinct(lifers$dc_number)*100) %>%
+  as.data.frame(tolo())
+race$race <- gsub("HISPANIC", "Hispanic", race$race)
+race$race <- gsub("WHITE", "White",
+                  race$race)
+race$race <-  gsub("BLACK", "Black",
+                   race$race)
+race$race <-  gsub("ALL OTHERS", "Other",
+                   race$race)
+
+pop_fl<- pivot_longer(pop_fl, cols = c(2:12), names_to = "race", values_to = "total_people") 
+left_join(race, pop_fl, by = "race") %>%
+  select(-State) %>% 
+  mutate(pct_own_race_total = round((people/total_people*100),2),
+         pct_of_total_pop = round((total_people/sum(total_people)*100),2)) %>%
+  mutate(disparity = (pct - pct_of_total_pop))
+
+```
+
+```{r florida admission date }
+lifers$sentence_date <- ymd(lifers$sentence_date)
+lifers$offense_date <- ymd(lifers$sentence_date)
+
+lifers <- lifers %>%
+  mutate(sentence_year = year(sentence_date), 
+         offense_year = year(offense_date))
+
+unique_lifers <- lifers %>%
+  group_by(dc_number, offense_year) %>%
+  filter(!any(is.na(offense_year))) %>%
+  summarise(people = n())
+
+grid.arrange(ggplot(unique_lifers, mapping = aes(offense_year, people))+
+     #geom_point()+
+     #geom_line()+
+     geom_smooth(),
+  (lifers %>%
+  group_by(dc_number, sentence_year) %>%
+  filter(!any(is.na(sentence_year))) %>%
+  summarise(people = n()) %>% 
+     #filter(admission_year > 2000)%>%
+     ggplot(lifers, mapping = aes(sentence_year, people))+
+     #geom_point()+
+     #geom_line()+
+     geom_smooth()), 
+  ncol=2)
+```
+
+```{r race}
+
+grid.arrange(lifers %>%
+  group_by(dc_number, race, offense_year) %>%
+  filter(!any(is.na(offense_year))) %>%
+  summarise(people = n()) %>% 
+     filter(str_detect(race, "WHITE|BLACK|HISPANIC")) %>%
+    ggplot(lifers, mapping = aes(offense_year, people, color = race))+
+     # geom_point()+
+     # geom_line()+
+     geom_smooth()+
+   theme(legend.position="bottom"),
+  (lifers %>%
+  group_by(dc_number, race, sentence_year) %>%
+  filter(!any(is.na(sentence_year))) %>%
+  summarise(people = n()) %>% 
+      filter(str_detect(race, "WHITE|BLACK|HISPANIC")) %>%
+     #filter(admission_year > 2000)%>%
+     ggplot(lifers, mapping = aes(sentence_year, people, color = race))+
+     # geom_point()+
+     # geom_line()+
+     geom_smooth()+
+theme(legend.position="bottom")),
+  ncol=2)
+
+```
+
+```{r county }
+
+population <- get_estimates(geography = "county", "population", 
+                            variables = NULL, breakdown = NULL, 
+                            breakdown_labels = NULL, year = 2018, state = "FL", key = "156fda6326a38745b31480cc7848c55e7f4fcf41")
+
+county <- lifers %>%
+  group_by(dc_number, county, dob) %>%
+  summarise(people=n())%>%
+  select(-people) %>%
+  group_by(county)%>%
+  summarise(people=n())
+
+county <- county %>%
+  mutate(pct = people/51*100) %>%
+  rename(NAME = county)
+
+population$NAME <- gsub(" County, Florida", "", population$NAME) %>% toupper()
+
+
+
+population <- population %>% 
+  filter(variable == "POP") 
+
+
+by_county <- county %>%
+  left_join(population, by = "NAME") %>%
+  select(1:3, 6) 
+
+by_county <- 
+  by_county %>%
+  mutate(juvenile_per_person = (people/value)*100000)
+
+datatable(by_county)
+```

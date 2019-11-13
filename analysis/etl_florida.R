@@ -1,6 +1,7 @@
 library(tidyverse)
 library(readr)
 library(lubridate)
+library(readxl)
 
 #ask about everyone with 7378, P58748, 094027 (1000 years Franklin), 640016 (100 y), J47682 (bad data probably), c(062991, 028464	 	032257, 076331 (cancelled but actually a lifer)
 # ##there are three sentence dates 	2048-06-19 - is that a mistake or a sentence date for a lifer 455837
@@ -8,6 +9,8 @@ library(lubridate)
 
 ####GET THE DATA----
 ###pull in data sent from florida doc (data is up to date from 4/30/19)
+
+resentenced_atwell <- read_xlsx("data/source/atwell_data_fl.xlsx")
 
 rawdata <- read_csv("data/source/florida_043019.csv")
 
@@ -26,8 +29,8 @@ release <- readRDS("data/processed/floridareleased.RDS")
 
 release_offenses <- read.csv("~/Desktop/INMATE_RELEASE_OFFENSES_CPS.txt")
 release_full <- read.csv("~/Desktop/INMATE_RELEASE_ROOT.txt")
-# 
-# 
+
+
 #n_distinct(release_full$DCNumber)
 # # n_distinct(release_root$DCNumber)
 # # 
@@ -501,3 +504,108 @@ n_distinct(t$dc_number)
 #   mutate(age = as.period(interval(release_full$BirthDate, release_full$OffenseDate), "years"))
 
 # 
+
+
+
+
+resentenced_atwell$dc_number <- as.character(resentenced_atwell$dc_number)
+
+juvnew <- juv %>%
+  rename(dc_number = DCNumber)
+
+n <- juvnew %>% 
+  filter(dc_number %in% resentenced_atwell$dc_number) 
+
+
+youngall <- release %>%
+  rename(dc_number = DCNumber) %>%
+  filter(age <18) %>%
+  anti_join(juvnew, by = "dc_number") %>%
+  
+p <- possibresent %>%
+  rename(dc_number = DCNumber) %>%
+  filter(dc_number %in% resentenced_atwell$dc_number)
+
+o <- youngall %>%
+  filter(dc_number %in% resentenced_atwell$dc_number) %>% 
+  anti_join(p, by = "dc_number")
+
+
+n_distinct(o$dc_number)
+
+#45 people 
+
+
+
+juv_release <- release %>%
+  rename(dc_number = DCNumber) %>% 
+  filter(age < 18) %>% 
+  filter(prisonterm == 9999998 |
+           dc_number %in% resentenced_atwell$dc_number)
+           
+n_distinct(juv_release$dc_number)       
+## who are we missing?
+
+missingfromour <- resentenced_atwell %>%
+  anti_join(juv_release, by = "dc_number") 
+
+release %>%
+  rename(dc_number = DCNumber) %>% 
+  filter(dc_number %in% missingfromour$dc_number)
+
+#162 people
+
+#possible resentenced people, take out dead
+
+possibresent <- release %>% 
+  filter(age <18) %>% 
+  rename(dc_number = DCNumber) %>% 
+  anti_join(juv_release, by = "dc_number") %>% 
+  filter(prisonterm != 9999998) %>%
+  filter(ParoleTerm == 9999998|
+           ProbationTerm == 9999998) %>%
+    filter(!dc_number %in% resentenced_atwell) %>% 
+  
+
+n_distinct(possibresent$dc_number)  
+
+#19 people  
+
+lifeolder <- release %>% 
+  rename(dc_number = DCNumber) %>% 
+  filter(dc_number %in% possibresent$dc_number) %>% 
+  filter(prisonterm == "9999998")
+
+#this gives us people who got lifesentences when they were older than 18 but also commited crimes earlier
+
+possibresent <- possibresent %>%
+  anti_join(lifeolder, by = "dc_number")
+
+n_distinct(possibresent$dc_number) 
+
+#14 people remains, who are they?
+
+release %>% 
+  rename(dc_number = DCNumber) %>% 
+  filter(dc_number %in% possibresent$dc_number) %>% View()
+
+
+
+ATWELL 
+
+#exist in our existing juvreleased data
+
+# 1 015352    BRYANT    DWIGHT     NA          PINELLAS 15352   1964-09-30 00:00:00 2018-08-16 00:00:00
+# 2 015228    DUNBAR    MICHAEL    NA          PINELLAS 6415223 1965-09-30 00:00:00 2018-07-13 00:00:00
+ 
+#they exist because their paorle term is 9999998
+
+#exist in our possibresent data 
+
+# 1 023801	CREAMER	DENNIS	M		W	M	1953-01-15	XXX	BRO	509	185	2017-06-27	5/9/1969 0:00:00	valid release date	CLOSE	CENTRAL OFFICE	1	1968-05-30	4/24/1969 0:00:00	BREVARD	6843686	560000	9999998	0	1ST DG MUR/PREMED. OR ATT.	PRINCIPAL	ADJUDICATION NOT WITHHELD	15	15
+# 2	039295	BISSONETTE	ROY	I	JR	W	M	1957-05-28	GRY	HAZ	507	178	2017-07-03	9/20/1973 0:00:00	valid release date	CLOSE	CENTRAL OFFICE	1	1973-05-12	8/24/1973 0:00:00	BREVARD	7300440	430000	9999998	0	1ST DG MUR/PREMED. OR ATT.	PRINCIPAL	ADJUDICATION NOT WITHHELD	15	15
+# 3	056056	ADAMS	RONNIE	G		W	M	1961-10-13	BRO	BLU	510	157	2017-02-16	10/20/1976 0:00:00	valid release date	CLOSE	CENTRAL OFFICE	1	1976-07-06	10/20/1976 0:00:00	GLADES	7600025	400000	0	9999998	2ND DEG.MURD,DANGEROUS ACT	PRINCIPAL	ADJUDICATION NOT WITHHELD	14	14
+# 6	092278	IRVING	DEAN	S		W	M	1964-01-18	BLK	BRO	509	157	2018-04-11	12/20/1983 0:00:00	valid release date	CLOSE	CROSS CITY C.I.	1	1981-03-19	12/9/1983 0:00:00	BAY	8201173	750000	9999998	0	1ST DG MUR/PREMED. OR ATT.	PRINCIPAL	ADJUDICATION NOT WITHHELD	17	17
+# 7	216317	BARTH	CLIFFORD	E		W	M	1973-12-30	BRO	BRO	509	165	2017-09-14	9/25/1991 0:00:00	valid release date	CLOSE	CENTRAL OFFICE	1	1991-01-26	9/18/1991 0:00:00	ESCAMBIA	9100606	260000	9999998	0	1ST DG MUR/PREMED. OR ATT.	PRINCIPAL	ADJUDICATION NOT WITHHELD	17	17
+
+#they exist because their paorle term  or parole term is 9999998
