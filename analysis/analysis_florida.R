@@ -69,14 +69,48 @@ by_dc %>%
   summarise(people = n()) %>%
   mutate(pct = people/nrow(by_dc)*100)
 
-# #race       people    pct
-# <chr>       <int>  <dbl>
-#   1 ALL OTHERS      2  0.410
-# 2 BLACK         323 66.2  
-# 3 HISPANIC       14  2.87 
-# 4 WHITE         149 30.5  
-# > 
 
+
+total_population <- prison_population_2017 <- read_delim("data/source/prison_population_2017.csv", 
+                                                         ";", escape_double = FALSE, col_types = cols(`American Indian/Alaska Native` = col_integer(), 
+                                                                                                      Asian = col_integer(), Black = col_integer(), 
+                                                                                                      `Did not report` = col_integer(), 
+                                                                                                      Hispanic = col_integer(), `Native Hawaiian/Other Pacific Islander` = col_integer(), 
+                                                                                                      Other = col_integer(), Total = col_integer(), 
+                                                                                                      `Two or more races` = col_integer(), 
+                                                                                                      Unknown = col_integer(), White = col_integer()), 
+                                                         trim_ws = TRUE)
+pop_fl <- total_population %>%
+  filter(State == "Florida/d") %>%
+  as.data.frame(toupper())
+
+race <- 
+  by_dc %>%
+  group_by(race) %>%
+  summarise(people = n()) %>%
+  mutate(pct = people/nrow(by_dc)*100) %>%
+  as.data.frame(tolo())
+race$race <- gsub("HISPANIC", "Hispanic", race$race)
+race$race <- gsub("WHITE", "White",
+                  race$race)
+race$race <-  gsub("BLACK", "Black",
+                   race$race)
+race$race <-  gsub("ALL OTHERS", "Other",
+                   race$race)
+
+pop_fl<- pivot_longer(pop_fl, cols = c(2:12), names_to = "race", values_to = "total_people") 
+left_join(race, pop_fl, by = "race") %>%
+  select(-State) %>% 
+  mutate(pct_own_race_total = round((people/total_people*100),2),
+         pct_of_total_pop = round((total_people/sum(total_people)*100),2)) %>%
+  mutate(disparity = (pct - pct_of_total_pop)) %>% View()
+
+
+# race people       pct total_people pct_own_race_total pct_of_total_pop  disparity
+# 1    Other      3  0.365408          239               1.26             0.24   0.125408
+# 2    Black    561 68.331303        46493               1.21            47.26  21.071303
+# 3 Hispanic     21  2.557856        12207               0.17            12.41  -9.852144
+# 4    White    236 28.745432        39443               0.60            40.09 -11.344568
 
 
 #there's no na-s, 
@@ -194,9 +228,13 @@ by_dc %>%
 
 dobmissing <- release %>%
   filter(is.na(OffenseDate))
+n_distinct(dobmissing$DCNumber)
 
 juv <- release %>%
   filter(age < 18) <- #this gave us all juveniles 
+
+n_distinct(juv$DCNumber)
+15635
   
 #try to distinct lifers there 
   
@@ -206,6 +244,29 @@ juv %>% group_by(prisonterm) %>% count() %>% View()
 
 juv <- juv %>%
   filter(prisonterm == 9999998)
+
+n_distinct(juv$DCNumber)
+112
+
+deceased <- juv %>%
+  filter(releasedateflag_descr == "deceased")
+
+n_distinct(deceased$DCNumber)
+###48 deceased
+
+notdeceased <- juv %>%
+  filter(releasedateflag_descr == "valid release date")
+
+n_distinct(notdeceased$DCNumber)
+##64 people 
+
+
+releasedateflag_descr     n
+<fct>                 <int>
+  1 deceased                 68
+  2 valid release date       94
+  
+#it's noteworthy that 
 
 #the question remains though, what about people who were sentenced to life but then resentenced are 
 #they in data with life or resentece
@@ -233,34 +294,53 @@ n_distinct(possibresent$DCNumber)  #24 people
   
 #include only people who's "offence age" is still under 18, as they might just serve life for later crimes
 
-possibresent <- 
+y <- 
   possibresent %>%
   mutate(secondage = as.period(interval(possibresent$BirthDate, possibresent$OffenseDate), "years"))
 
 possibresent$secondage <- substr(possibresent$secondage, 1, 2)
 
-y <- release %>% 
+z <- release %>% 
   filter(DCNumber %in% possibresent$DCNumber, 
          prisonterm == 9999998)
 
-#there's 6 people 
+possibresent <- possibresent %>%
+  anti_join(z, by = "DCNumber")
+n_distinct(possibresent$DCNumber)
 
-y <- possibresent %>%
-  mutate(secondage = as.period(interval(possibresent$BirthDate, possibresent$OffenseDate), "years"))
+#043260 - served life, now out 
+#111071 - served life, now out
+#462728 - no information 
+#525062 - no information 
+#860718 - no information
+#E10085 - probation for life, not life sentence, 12 year old 
+#E10086 - probation for life, not life sentence
+#E14102 - probation for life, not life sentence - release date post 2010
+#H19279 - no information- release date post 2010
+#M07064 - no information
+#Q09528 - no information 
+#V40652	- probation for life
+#X00096	- probation for life
+#X75092 - no information 
 
-possibresent$secondage <- substr(possibresent$secondage, 1, 2) 
 
-#age shows that they all commited life sentence crimes when they were older than 18
+#there's 6 people but their crimes were commmited not at the age of 18 
 
-z <- possibresent %>%
-  anti_join(y, by = "DCNumber")
+#023801	CREAMER	DENNIS - google says resentenced 
+#	039295 BISSONETTE	ROY	-  google says resentenced
 
-n_distinct(z$DCNumber) <- #19 people 
-  
-resentence_bf_release <- release %>% 
-  filter(DCNumber %in% )
 
-ONLY DAVID CREAMER 
+#043260 Billy Lynch - no information 
+#056056 Ronnie Adams- no information
+
+
+
+
+
+
+
+
+#ONLY DAVID CREAMER 
 
 
 
@@ -280,6 +360,7 @@ ONLY DAVID CREAMER
 by_dc_county <- lifers %>%
   group_by(dc_number, last_name, first_name, middle_name, dob, gender, race, county) %>%
   count()
+
 release %>% filter("FirstName"== "EUGENE") %>% View()
 by_dc_county %>%
   group_by(county) %>%
@@ -348,7 +429,7 @@ juv <- t %>%
 lifers_more <- lifers %>%
   left_join(active_offense, by = "dc_number")
 
-Most lifers have 
+
 
 pterms <- lifers_more %>%
   group_by(ParoleTerm) %>%
@@ -438,7 +519,7 @@ left_others <- others %>% anti_join(resentence, by = "dc_number")
 
 #billy mansfield - seems to be in florida instead  https://inmatelocator.cdcr.ca.gov/Details.aspx?ID=C45134
 
-add them to the resentenced data frame 
+#add them to the resentenced data frame 
 
 resentence <- rawdata %>% 
   filter(dc_number %in% c("G14126", "H30826", "K74916", "M38196", 
@@ -496,9 +577,9 @@ test %>%
             View()
 
 
-people that are resentenced but we not knof of = have yet not be released
+#people that are resentenced but we not knof of = have yet not be released
 
-is there someone missing from our lifers ?
+#is there someone missing from our lifers ?
 
 active_offense <- active_offense %>%
   rename(case_nr = CaseNumber)
@@ -570,4 +651,14 @@ x <-x %>%  group_by(dc_number, prisonterm) %>%
 
 
 young %>% filter(p)
+
+
+release %>%
+  rename(DCNumber = dc_number) %% 
+
+
+
+
+
+
 
