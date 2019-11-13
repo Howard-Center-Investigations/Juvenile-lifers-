@@ -319,7 +319,7 @@ n_distinct(possibresent$DCNumber)
 #H19279 - no information- release date post 2010
 #M07064 - no information
 #Q09528 - no information 
-#V40652	- probation for life
+#V40652	- probation for life 
 #X00096	- probation for life
 #X75092 - no information 
 

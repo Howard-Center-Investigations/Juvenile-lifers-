@@ -569,7 +569,7 @@ possibresent <- release %>%
 
 n_distinct(possibresent$dc_number)  
 
-#19 people  
+#19  people  
 
 lifeolder <- release %>% 
   rename(dc_number = DCNumber) %>% 
