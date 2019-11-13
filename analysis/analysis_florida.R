@@ -323,6 +323,7 @@ n_distinct(possibresent$DCNumber)
 #X00096	- probation for life
 #X75092 - no information 
 
+<<<<<<< HEAD
 # based on google
 # resentenced to life 
 # Jermaine Jones 
@@ -412,6 +413,25 @@ by_county <-
 datatable(by_county)
 
 
+=======
+
+#there's 6 people but their crimes were commmited not at the age of 18 
+
+#023801	CREAMER	DENNIS - google says resentenced 
+#	039295 BISSONETTE	ROY	-  google says resentenced
+
+
+#043260 Billy Lynch - no information 
+#056056 Ronnie Adams- no information
+
+
+
+
+
+
+
+
+>>>>>>> 251c698f4116e8cd629bab44883743ea43092ec8
 #ONLY DAVID CREAMER 
 
 

@@ -51,12 +51,15 @@ population <- get_estimates(geography = "county", "population",
                             variables = NULL, breakdown = NULL, 
                             breakdown_labels = NULL, year = 2018, state = "FL", key = "156fda6326a38745b31480cc7848c55e7f4fcf41")
 
+<<<<<<< HEAD
 
 #####RELEASE----
 
 release_offenses <- read.csv("~/Desktop/INMATE_RELEASE_OFFENSES_CPS.txt")
 release_full <- read.csv("~/Desktop/INMATE_RELEASE_ROOT.txt")
 
+=======
+>>>>>>> 251c698f4116e8cd629bab44883743ea43092ec8
 ```
 
 ## What is the overall number of juveniles currently serving a life sentence?
@@ -79,6 +82,7 @@ pop_fl <- total_population %>%
   filter(State == "Florida/d") %>%
   as.data.frame(toupper())
 
+<<<<<<< HEAD
 by_dc <- lifers %>%
   group_by(race, dc_number) %>%
   summarise(people = n()) %>%
@@ -88,6 +92,13 @@ by_dc <- lifers %>%
 
 race <- by_dc %>% 
   mutate(pct = people/n_distinct(lifers$dc_number)*100) %>%
+=======
+race <- 
+  by_dc %>%
+  group_by(race) %>%
+  summarise(people = n()) %>%
+  mutate(pct = people/nrow(by_dc)*100) %>%
+>>>>>>> 251c698f4116e8cd629bab44883743ea43092ec8
   as.data.frame(tolo())
 race$race <- gsub("HISPANIC", "Hispanic", race$race)
 race$race <- gsub("WHITE", "White",
